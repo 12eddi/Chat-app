@@ -1,0 +1,9 @@
+**/node_modules
+**/dist
+**/.vite
+**/.DS_Store
+**/coverage
+.git
+.gitignore
+backend/uploads/*
+!backend/uploads/.gitkeep

@@ -1,0 +1,151 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                         String            @id @default(uuid())
+  firstName                  String
+  lastName                   String
+  birthDate                  DateTime?
+  username                   String            @unique
+  email                      String            @unique
+  passwordHash               String?
+  googleId                   String?           @unique
+  profilePhotoUrl            String?
+  emailVerified              Boolean           @default(false)
+  passwordResetTokenHash     String?
+  passwordResetExpiresAt     DateTime?
+  emailVerificationTokenHash String?
+  emailVerificationExpiresAt DateTime?
+  createdAt                  DateTime          @default(now())
+  updatedAt                  DateTime          @updatedAt
+
+  sentMessages      Message[]
+  messageReactions  MessageReaction[]
+  createdChats      Chat[]            @relation("CreatedChats")
+  participants      ChatParticipant[]
+  groupInvites      GroupInvite[]
+  sentGroupInvites  GroupInvite[]     @relation("SentGroupInvites")
+  notifications     Notification[]
+}
+
+model Chat {
+  id           String            @id @default(uuid())
+  type         String
+  name         String?
+  photoUrl     String?
+  createdById  String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  createdBy     User?             @relation("CreatedChats", fields: [createdById], references: [id], onDelete: SetNull)
+  participants  ChatParticipant[]
+  invites       GroupInvite[]
+  messages      Message[]
+  notifications Notification[]
+}
+
+enum ChatParticipantRole {
+  MEMBER
+  ADMIN
+  OWNER
+}
+
+model ChatParticipant {
+  id       String              @id @default(uuid())
+  chatId   String
+  userId   String
+  role     ChatParticipantRole @default(MEMBER)
+  joinedAt DateTime            @default(now())
+
+  chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([chatId, userId])
+}
+
+enum GroupInviteStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+model GroupInvite {
+  id          String            @id @default(uuid())
+  chatId      String
+  userId      String
+  invitedById String
+  status      GroupInviteStatus @default(PENDING)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  chat      Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invitedBy User @relation("SentGroupInvites", fields: [invitedById], references: [id], onDelete: Cascade)
+
+  @@unique([chatId, userId])
+}
+
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+}
+
+model Message {
+  id           String        @id @default(uuid())
+  chatId       String
+  senderId     String
+  content      String
+  status       MessageStatus @default(SENT)
+  imageUrl     String?
+  scheduledFor DateTime?
+  sentAt       DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  deletedAt    DateTime?
+
+  sender        User           @relation(fields: [senderId], references: [id])
+  chat          Chat           @relation(fields: [chatId], references: [id])
+  reactions     MessageReaction[]
+  notifications Notification[]
+}
+
+model MessageReaction {
+  id        String   @id @default(uuid())
+  messageId String
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+}
+
+enum NotificationType {
+  MESSAGE
+  GROUP_INVITE
+  GROUP_EVENT
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  isRead    Boolean          @default(false)
+  chatId    String?
+  messageId String?
+  createdAt DateTime         @default(now())
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chat    Chat?    @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  message Message? @relation(fields: [messageId], references: [id], onDelete: Cascade)
+}

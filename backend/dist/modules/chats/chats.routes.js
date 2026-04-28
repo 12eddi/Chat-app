@@ -1,0 +1,21 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_middleware_1 = require("../../middleware/auth.middleware");
+const verified_middleware_1 = require("../../middleware/verified.middleware");
+const chats_controller_1 = require("./chats.controller");
+const upload_1 = require("../../utils/upload");
+const router = (0, express_1.Router)();
+router.post("/direct", auth_middleware_1.authenticate, verified_middleware_1.requireVerifiedEmail, chats_controller_1.createDirectChat);
+router.post("/group", auth_middleware_1.authenticate, verified_middleware_1.requireVerifiedEmail, chats_controller_1.createGroup);
+router.get("/invites", auth_middleware_1.authenticate, verified_middleware_1.requireVerifiedEmail, chats_controller_1.fetchInvites);
+router.post("/invites/:inviteId/accept", auth_middleware_1.authenticate, verified_middleware_1.requireVerifiedEmail, chats_controller_1.acceptInvite);
+router.post("/invites/:inviteId/reject", auth_middleware_1.authenticate, verified_middleware_1.requireVerifiedEmail, chats_controller_1.rejectInvite);
+router.post("/:chatId/participants", auth_middleware_1.authenticate, verified_middleware_1.requireVerifiedEmail, chats_controller_1.addParticipants);
+router.patch("/:chatId", auth_middleware_1.authenticate, verified_middleware_1.requireVerifiedEmail, upload_1.upload.single("photo"), chats_controller_1.updateGroupDetailsController);
+router.patch("/:chatId/participants/:participantId/role", auth_middleware_1.authenticate, verified_middleware_1.requireVerifiedEmail, chats_controller_1.changeParticipantRole);
+router.delete("/:chatId/participants/:participantId", auth_middleware_1.authenticate, verified_middleware_1.requireVerifiedEmail, chats_controller_1.removeParticipant);
+router.post("/:chatId/leave", auth_middleware_1.authenticate, verified_middleware_1.requireVerifiedEmail, chats_controller_1.leaveGroupController);
+router.get("/", auth_middleware_1.authenticate, verified_middleware_1.requireVerifiedEmail, chats_controller_1.fetchChats);
+exports.default = router;
+//# sourceMappingURL=chats.routes.js.map

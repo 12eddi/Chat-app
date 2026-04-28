@@ -1,0 +1,47 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: chatapp
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+    depends_on:
+      - postgres
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      CLIENT_URL: http://localhost:5173
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/chatapp?schema=public
+      JWT_SECRET: change_me_for_real_use
+      RUN_SCHEDULED_MESSAGE_PROCESSOR: "false"
+      PASSWORD_RESET_TOKEN_TTL_MINUTES: 30
+      EMAIL_VERIFICATION_TOKEN_TTL_MINUTES: 60
+      SCHEDULED_MESSAGE_POLL_MS: 5000
+      SCHEDULED_MESSAGE_BATCH_SIZE: 20
+      SCHEDULED_MESSAGE_ERROR_BACKOFF_MS: 15000
+    ports:
+      - "5000:5000"
+    volumes:
+      - backend_uploads:/app/uploads
+    command: sh -c "npx prisma migrate deploy --schema prisma/schema.prisma && npm run start"
+
+  frontend:
+    build:
+      context: ./frontend
+    depends_on:
+      - backend
+    ports:
+      - "5173:5173"
+
+volumes:
+  postgres_data:
+  backend_uploads:
