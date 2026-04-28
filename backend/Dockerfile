@@ -16,6 +16,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 COPY package*.json ./
 RUN npm install --omit=dev
+COPY --from=build /app/prisma.config.js ./prisma.config.js
+COPY --from=build /app/prisma.config.js.map ./prisma.config.js.map
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/uploads ./uploads
