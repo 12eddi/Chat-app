@@ -2,6 +2,7 @@ import "dotenv/config";
 
 const DEFAULT_CLIENT_URL = "http://localhost:5173";
 const DEFAULT_PORT = 5000;
+const DEFAULT_HOST = "0.0.0.0";
 const DEFAULT_PASSWORD_RESET_TOKEN_TTL_MINUTES = 30;
 const DEFAULT_EMAIL_VERIFICATION_TOKEN_TTL_MINUTES = 60;
 const DEFAULT_SCHEDULED_MESSAGE_POLL_MS = 5000;
@@ -71,6 +72,7 @@ const databaseUrl = requireString(process.env.DATABASE_URL, "DATABASE_URL");
 const jwtSecret = requireString(process.env.JWT_SECRET, "JWT_SECRET");
 const clientUrl = process.env.CLIENT_URL?.trim() || DEFAULT_CLIENT_URL;
 const port = parsePositiveInteger(process.env.PORT, DEFAULT_PORT, "PORT");
+const host = process.env.HOST?.trim() || DEFAULT_HOST;
 const passwordResetTokenTtlMinutes = parsePositiveInteger(
   process.env.PASSWORD_RESET_TOKEN_TTL_MINUTES,
   DEFAULT_PASSWORD_RESET_TOKEN_TTL_MINUTES,
@@ -129,6 +131,7 @@ const googleClientId = process.env.GOOGLE_CLIENT_ID?.trim() || null;
 
 export const env = {
   nodeEnv: process.env.NODE_ENV || "development",
+  host,
   port,
   clientUrl,
   databaseUrl,

@@ -148,6 +148,6 @@ io.on("connection", (socket) => {
   });
 });
 
-server.listen(env.port, () => {
-  console.log(`Server running on port ${env.port}`);
+server.listen(env.port, env.host, () => {
+  console.log(`Server running on ${env.host}:${env.port}`);
 });
