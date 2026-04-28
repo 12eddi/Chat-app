@@ -23,4 +23,4 @@ COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/uploads ./uploads
 COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 EXPOSE 5000
-CMD ["npm", "run", "start"]
+CMD ["npm", "run", "start:deploy"]

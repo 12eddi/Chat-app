@@ -37,6 +37,13 @@ app.use("/api/chats", chatsRoutes);
 app.use("/api/chats", messagesRoutes);
 app.use("/api/notifications", notificationsRoutes);
 
+app.get("/", (_req, res) => {
+  res.status(200).json({
+    service: "chat-app-backend",
+    status: "ok",
+  });
+});
+
 app.get("/api/health", (_req, res) => {
   res.json({ message: "API is running" });
 });
