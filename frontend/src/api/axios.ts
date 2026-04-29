@@ -1,8 +1,17 @@
 import axios from "axios";
 
+const normalizeBaseUrl = (value?: string) => {
+  if (!value) {
+    return "http://localhost:5000/api";
+  }
+
+  return `${value.replace(/\/+$/, "")}/api`;
+};
+
 const api = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL),
   withCredentials: true,
+  timeout: 15000,
 });
 
 api.interceptors.request.use((config) => {

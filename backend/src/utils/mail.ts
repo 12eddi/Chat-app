@@ -10,6 +10,9 @@ const getSmtpConfig = () => {
     host: env.mail.host,
     port: env.mail.port,
     secure: env.mail.port === 465,
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
     auth: {
       user: env.mail.user,
       pass: env.mail.pass,

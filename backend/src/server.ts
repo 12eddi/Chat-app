@@ -17,9 +17,29 @@ import { setSocketServer } from "./socket";
 
 const server = http.createServer(app);
 
+const allowedOriginPatterns = [/\.vercel\.app$/i];
+
+const isAllowedOrigin = (origin?: string) => {
+  if (!origin) {
+    return true;
+  }
+
+  if (env.clientUrls.includes(origin)) {
+    return true;
+  }
+
+  return allowedOriginPatterns.some((pattern) => pattern.test(origin));
+};
+
 const io = new Server(server, {
   cors: {
-    origin: env.clientUrl,
+    origin(origin, callback) {
+      if (isAllowedOrigin(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Origin not allowed by Socket.IO CORS"));
+    },
     credentials: true,
   },
 });

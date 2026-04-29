@@ -70,7 +70,12 @@ const parseBoolean = (
 
 const databaseUrl = requireString(process.env.DATABASE_URL, "DATABASE_URL");
 const jwtSecret = requireString(process.env.JWT_SECRET, "JWT_SECRET");
-const clientUrl = process.env.CLIENT_URL?.trim() || DEFAULT_CLIENT_URL;
+const rawClientUrl = process.env.CLIENT_URL?.trim() || DEFAULT_CLIENT_URL;
+const clientUrls = rawClientUrl
+  .split(",")
+  .map((url) => url.trim())
+  .filter(Boolean);
+const primaryClientUrl = clientUrls[0] || DEFAULT_CLIENT_URL;
 const host = process.env.HOST?.trim() || DEFAULT_HOST;
 const port = parsePositiveInteger(process.env.PORT, DEFAULT_PORT, "PORT");
 const passwordResetTokenTtlMinutes = parsePositiveInteger(
@@ -133,7 +138,9 @@ export const env = {
   nodeEnv: process.env.NODE_ENV || "development",
   host,
   port,
-  clientUrl,
+  clientUrl: rawClientUrl,
+  clientUrls,
+  primaryClientUrl,
   databaseUrl,
   jwtSecret,
   passwordResetTokenTtlMinutes,
