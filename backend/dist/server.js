@@ -15,14 +15,7 @@ const socket_1 = require("./socket");
 const server = http_1.default.createServer(app_1.default);
 const io = new socket_io_1.Server(server, {
     cors: {
-        origin: (origin, callback) => {
-            if (!origin ||
-                env_1.env.clientUrls.includes(origin) ||
-                /^https:\/\/chat-app(?:-[\w-]+)?(?:-12eddis-projects)?\.vercel\.app$/i.test(origin)) {
-                return callback(null, true);
-            }
-            return callback(new Error(`Socket.IO CORS blocked for origin: ${origin}`));
-        },
+        origin: env_1.env.clientUrl,
         credentials: true,
     },
 });
@@ -109,7 +102,7 @@ io.on("connection", (socket) => {
         emitOnlineUsers();
     });
 });
-server.listen(env_1.env.port, env_1.env.host, () => {
-    console.log(`Server running on ${env_1.env.host}:${env_1.env.port}`);
+server.listen(env_1.env.port, () => {
+    console.log(`Server running on port ${env_1.env.port}`);
 });
 //# sourceMappingURL=server.js.map

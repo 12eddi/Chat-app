@@ -5,8 +5,8 @@ import crypto from "crypto";
 import { env } from "../../config/env";
 import {
   isMailConfigured,
-  sendEmailVerificationEmailSafely,
-  sendPasswordResetEmailSafely,
+  sendEmailVerificationEmail,
+  sendPasswordResetEmail,
 } from "../../utils/mail";
 import { verifyGoogleIdToken } from "../../utils/google";
 
@@ -50,11 +50,11 @@ const createEmailVerificationToken = () =>
   createTokenRecord(env.emailVerificationTokenTtlMinutes);
 
 const getPasswordResetUrl = (token: string) => {
-  return `${env.primaryClientUrl}/forgot-password?token=${encodeURIComponent(token)}`;
+  return `${env.clientUrl}/forgot-password?token=${encodeURIComponent(token)}`;
 };
 
 const getEmailVerificationUrl = (token: string) => {
-  return `${env.primaryClientUrl}/verify-email?token=${encodeURIComponent(token)}`;
+  return `${env.clientUrl}/verify-email?token=${encodeURIComponent(token)}`;
 };
 
 const shouldExposeResetUrl = () => {
@@ -137,7 +137,7 @@ const issueEmailVerification = async (userId: string, email: string) => {
   `;
 
   if (isMailConfigured()) {
-    await sendEmailVerificationEmailSafely(email, verificationUrl);
+    await sendEmailVerificationEmail(email, verificationUrl);
   }
 
   return {
@@ -148,12 +148,7 @@ const issueEmailVerification = async (userId: string, email: string) => {
 };
 
 export const registerUser = async (data: RegisterInput) => {
-  const firstName = data.firstName.trim();
-  const lastName = data.lastName.trim();
-  const birthDate = data.birthDate;
-  const email = data.email.trim().toLowerCase();
-  const username = data.username.trim();
-  const password = data.password;
+  const { firstName, lastName, birthDate, email, username, password } = data;
 
   const existingUser = await prisma.user.findFirst({
     where: {
@@ -162,14 +157,6 @@ export const registerUser = async (data: RegisterInput) => {
   });
 
   if (existingUser) {
-    if (existingUser.email === email) {
-      throw new Error("Email is already taken");
-    }
-
-    if (existingUser.username === username) {
-      throw new Error("Username is already taken");
-    }
-
     throw new Error("User already exists");
   }
 
@@ -328,7 +315,7 @@ export const requestPasswordReset = async (email: string) => {
   `;
 
   if (isMailConfigured()) {
-    await sendPasswordResetEmailSafely(user.email, resetUrl);
+    await sendPasswordResetEmail(user.email, resetUrl);
   }
 
   return {

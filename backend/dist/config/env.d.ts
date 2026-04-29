@@ -1,10 +1,8 @@
 import "dotenv/config";
 export declare const env: {
     nodeEnv: string;
-    host: string;
     port: number;
     clientUrl: string;
-    clientUrls: string[];
     databaseUrl: string;
     jwtSecret: string;
     passwordResetTokenTtlMinutes: number;

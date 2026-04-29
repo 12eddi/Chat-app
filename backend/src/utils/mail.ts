@@ -10,9 +10,6 @@ const getSmtpConfig = () => {
     host: env.mail.host,
     port: env.mail.port,
     secure: env.mail.port === 465,
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 15000,
     auth: {
       user: env.mail.user,
       pass: env.mail.pass,
@@ -99,30 +96,4 @@ export const sendEmailVerificationEmail = async (
   });
 
   return true;
-};
-
-export const sendPasswordResetEmailSafely = async (
-  email: string,
-  resetUrl: string
-) => {
-  try {
-    await sendPasswordResetEmail(email, resetUrl);
-    return true;
-  } catch (error) {
-    console.error("Failed to send password reset email:", error);
-    return false;
-  }
-};
-
-export const sendEmailVerificationEmailSafely = async (
-  email: string,
-  verificationUrl: string
-) => {
-  try {
-    await sendEmailVerificationEmail(email, verificationUrl);
-    return true;
-  } catch (error) {
-    console.error("Failed to send email verification email:", error);
-    return false;
-  }
 };
