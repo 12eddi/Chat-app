@@ -15,6 +15,12 @@ const messages_routes_1 = __importDefault(require("./modules/messages/messages.r
 const notifications_routes_1 = __importDefault(require("./modules/notifications/notifications.routes"));
 const auth_middleware_1 = require("./middleware/auth.middleware");
 const app = (0, express_1.default)();
+const isAllowedOrigin = (origin) => {
+    if (env_1.env.clientUrls.includes(origin)) {
+        return true;
+    }
+    return /^https:\/\/chat-app(?:-[\w-]+)?(?:-12eddis-projects)?\.vercel\.app$/i.test(origin);
+};
 app.use((_req, res, next) => {
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("X-Frame-Options", "DENY");
@@ -22,7 +28,12 @@ app.use((_req, res, next) => {
     next();
 });
 app.use((0, cors_1.default)({
-    origin: env_1.env.clientUrl,
+    origin: (origin, callback) => {
+        if (!origin || isAllowedOrigin(origin)) {
+            return callback(null, true);
+        }
+        return callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
     credentials: true,
 }));
 app.use(express_1.default.json());
@@ -32,6 +43,12 @@ app.use("/api/users", users_routes_1.default);
 app.use("/api/chats", chats_routes_1.default);
 app.use("/api/chats", messages_routes_1.default);
 app.use("/api/notifications", notifications_routes_1.default);
+app.get("/", (_req, res) => {
+    res.status(200).json({
+        service: "chat-app-backend",
+        status: "ok",
+    });
+});
 app.get("/api/health", (_req, res) => {
     res.json({ message: "API is running" });
 });

@@ -94,7 +94,7 @@ const issueEmailVerification = async (userId, email) => {
     WHERE "id" = ${userId}
   `;
     if ((0, mail_1.isMailConfigured)()) {
-        await (0, mail_1.sendEmailVerificationEmail)(email, verificationUrl);
+        await (0, mail_1.sendEmailVerificationEmailSafely)(email, verificationUrl);
     }
     return {
         message: "Verification email sent successfully",
@@ -102,13 +102,24 @@ const issueEmailVerification = async (userId, email) => {
     };
 };
 const registerUser = async (data) => {
-    const { firstName, lastName, birthDate, email, username, password } = data;
+    const firstName = data.firstName.trim();
+    const lastName = data.lastName.trim();
+    const birthDate = data.birthDate;
+    const email = data.email.trim().toLowerCase();
+    const username = data.username.trim();
+    const password = data.password;
     const existingUser = await prisma_1.default.user.findFirst({
         where: {
             OR: [{ email }, { username }],
         },
     });
     if (existingUser) {
+        if (existingUser.email === email) {
+            throw new Error("Email is already taken");
+        }
+        if (existingUser.username === username) {
+            throw new Error("Username is already taken");
+        }
         throw new Error("User already exists");
     }
     const hashedPassword = await bcrypt_1.default.hash(password, 10);
@@ -244,7 +255,7 @@ const requestPasswordReset = async (email) => {
     WHERE "id" = ${user.id}
   `;
     if ((0, mail_1.isMailConfigured)()) {
-        await (0, mail_1.sendPasswordResetEmail)(user.email, resetUrl);
+        await (0, mail_1.sendPasswordResetEmailSafely)(user.email, resetUrl);
     }
     return {
         message: "If this email exists, a reset link has been sent.",

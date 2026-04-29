@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendEmailVerificationEmail = exports.sendPasswordResetEmail = exports.isMailConfigured = void 0;
+exports.sendEmailVerificationEmailSafely = exports.sendPasswordResetEmailSafely = exports.sendEmailVerificationEmail = exports.sendPasswordResetEmail = exports.isMailConfigured = void 0;
 const nodemailer = __importStar(require("nodemailer"));
 const env_1 = require("../config/env");
 const getSmtpConfig = () => {
@@ -44,6 +44,9 @@ const getSmtpConfig = () => {
         host: env_1.env.mail.host,
         port: env_1.env.mail.port,
         secure: env_1.env.mail.port === 465,
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 15000,
         auth: {
             user: env_1.env.mail.user,
             pass: env_1.env.mail.pass,
@@ -120,4 +123,26 @@ const sendEmailVerificationEmail = async (email, verificationUrl) => {
     return true;
 };
 exports.sendEmailVerificationEmail = sendEmailVerificationEmail;
+const sendPasswordResetEmailSafely = async (email, resetUrl) => {
+    try {
+        await (0, exports.sendPasswordResetEmail)(email, resetUrl);
+        return true;
+    }
+    catch (error) {
+        console.error("Failed to send password reset email:", error);
+        return false;
+    }
+};
+exports.sendPasswordResetEmailSafely = sendPasswordResetEmailSafely;
+const sendEmailVerificationEmailSafely = async (email, verificationUrl) => {
+    try {
+        await (0, exports.sendEmailVerificationEmail)(email, verificationUrl);
+        return true;
+    }
+    catch (error) {
+        console.error("Failed to send email verification email:", error);
+        return false;
+    }
+};
+exports.sendEmailVerificationEmailSafely = sendEmailVerificationEmailSafely;
 //# sourceMappingURL=mail.js.map

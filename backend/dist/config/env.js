@@ -4,6 +4,7 @@ exports.env = void 0;
 require("dotenv/config");
 const DEFAULT_CLIENT_URL = "http://localhost:5173";
 const DEFAULT_PORT = 5000;
+const DEFAULT_HOST = "0.0.0.0";
 const DEFAULT_PASSWORD_RESET_TOKEN_TTL_MINUTES = 30;
 const DEFAULT_EMAIL_VERIFICATION_TOKEN_TTL_MINUTES = 60;
 const DEFAULT_SCHEDULED_MESSAGE_POLL_MS = 5000;
@@ -48,7 +49,12 @@ const parseBoolean = (value, fallback) => {
 const databaseUrl = requireString(process.env.DATABASE_URL, "DATABASE_URL");
 const jwtSecret = requireString(process.env.JWT_SECRET, "JWT_SECRET");
 const clientUrl = process.env.CLIENT_URL?.trim() || DEFAULT_CLIENT_URL;
+const clientUrls = clientUrl
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
 const port = parsePositiveInteger(process.env.PORT, DEFAULT_PORT, "PORT");
+const host = process.env.HOST?.trim() || DEFAULT_HOST;
 const passwordResetTokenTtlMinutes = parsePositiveInteger(process.env.PASSWORD_RESET_TOKEN_TTL_MINUTES, DEFAULT_PASSWORD_RESET_TOKEN_TTL_MINUTES, "PASSWORD_RESET_TOKEN_TTL_MINUTES");
 const emailVerificationTokenTtlMinutes = parsePositiveInteger(process.env.EMAIL_VERIFICATION_TOKEN_TTL_MINUTES, DEFAULT_EMAIL_VERIFICATION_TOKEN_TTL_MINUTES, "EMAIL_VERIFICATION_TOKEN_TTL_MINUTES");
 const scheduledMessagePollMs = parsePositiveInteger(process.env.SCHEDULED_MESSAGE_POLL_MS, DEFAULT_SCHEDULED_MESSAGE_POLL_MS, "SCHEDULED_MESSAGE_POLL_MS");
@@ -71,8 +77,10 @@ const smtpPort = hasAllMailSettings
 const googleClientId = process.env.GOOGLE_CLIENT_ID?.trim() || null;
 exports.env = {
     nodeEnv: process.env.NODE_ENV || "development",
+    host,
     port,
     clientUrl,
+    clientUrls,
     databaseUrl,
     jwtSecret,
     passwordResetTokenTtlMinutes,
