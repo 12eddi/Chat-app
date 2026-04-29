@@ -5,8 +5,8 @@ import crypto from "crypto";
 import { env } from "../../config/env";
 import {
   isMailConfigured,
-  sendEmailVerificationEmail,
-  sendPasswordResetEmail,
+  sendEmailVerificationEmailSafely,
+  sendPasswordResetEmailSafely,
 } from "../../utils/mail";
 import { verifyGoogleIdToken } from "../../utils/google";
 
@@ -137,7 +137,7 @@ const issueEmailVerification = async (userId: string, email: string) => {
   `;
 
   if (isMailConfigured()) {
-    await sendEmailVerificationEmail(email, verificationUrl);
+    await sendEmailVerificationEmailSafely(email, verificationUrl);
   }
 
   return {
@@ -328,7 +328,7 @@ export const requestPasswordReset = async (email: string) => {
   `;
 
   if (isMailConfigured()) {
-    await sendPasswordResetEmail(user.email, resetUrl);
+    await sendPasswordResetEmailSafely(user.email, resetUrl);
   }
 
   return {
