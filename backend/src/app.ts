@@ -11,8 +11,15 @@ import messagesRoutes from "./modules/messages/messages.routes";
 import notificationsRoutes from "./modules/notifications/notifications.routes";
 import { authenticate } from "./middleware/auth.middleware";
 
-
 const app = express();
+
+const isAllowedOrigin = (origin: string) => {
+  if (env.clientUrls.includes(origin)) {
+    return true;
+  }
+
+  return /^https:\/\/chat-app(?:-[\w-]+)?(?:-12eddis-projects)?\.vercel\.app$/i.test(origin);
+};
 
 app.use((_req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
@@ -23,7 +30,13 @@ app.use((_req, res, next) => {
 
 app.use(
   cors({
-    origin: env.clientUrl,
+    origin: (origin, callback) => {
+      if (!origin || isAllowedOrigin(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
     credentials: true,
   })
 );

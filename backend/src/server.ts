@@ -19,7 +19,17 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: env.clientUrl,
+    origin: (origin, callback) => {
+      if (
+        !origin ||
+        env.clientUrls.includes(origin) ||
+        /^https:\/\/chat-app(?:-[\w-]+)?(?:-12eddis-projects)?\.vercel\.app$/i.test(origin)
+      ) {
+        return callback(null, true);
+      }
+
+      return callback(new Error(`Socket.IO CORS blocked for origin: ${origin}`));
+    },
     credentials: true,
   },
 });
