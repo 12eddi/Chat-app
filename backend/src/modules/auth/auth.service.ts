@@ -50,11 +50,11 @@ const createEmailVerificationToken = () =>
   createTokenRecord(env.emailVerificationTokenTtlMinutes);
 
 const getPasswordResetUrl = (token: string) => {
-  return `${env.clientUrl}/forgot-password?token=${encodeURIComponent(token)}`;
+  return `${env.primaryClientUrl}/forgot-password?token=${encodeURIComponent(token)}`;
 };
 
 const getEmailVerificationUrl = (token: string) => {
-  return `${env.clientUrl}/verify-email?token=${encodeURIComponent(token)}`;
+  return `${env.primaryClientUrl}/verify-email?token=${encodeURIComponent(token)}`;
 };
 
 const shouldExposeResetUrl = () => {

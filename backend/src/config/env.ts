@@ -75,6 +75,7 @@ const clientUrls = clientUrl
   .split(",")
   .map((value) => value.trim())
   .filter(Boolean);
+const primaryClientUrl = clientUrls[0] || DEFAULT_CLIENT_URL;
 const port = parsePositiveInteger(process.env.PORT, DEFAULT_PORT, "PORT");
 const host = process.env.HOST?.trim() || DEFAULT_HOST;
 const passwordResetTokenTtlMinutes = parsePositiveInteger(
@@ -139,6 +140,7 @@ export const env = {
   port,
   clientUrl,
   clientUrls,
+  primaryClientUrl,
   databaseUrl,
   jwtSecret,
   passwordResetTokenTtlMinutes,
