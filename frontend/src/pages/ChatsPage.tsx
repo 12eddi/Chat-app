@@ -235,7 +235,6 @@ export default function ChatsPage() {
   const [imageViewerMessage, setImageViewerMessage] = useState<Message | null>(null);
   const [scheduleModalMode, setScheduleModalMode] =
     useState<ScheduleModalMode>("compose");
-  const [reactionPickerMessageId, setReactionPickerMessageId] = useState<string | null>(null);
   const [scheduleMonth, setScheduleMonth] = useState(() => getStartOfMonth(new Date()));
   const [scheduleDraft, setScheduleDraft] = useState(() => {
     const next = new Date();
@@ -1598,7 +1597,7 @@ export default function ChatsPage() {
     event: React.MouseEvent,
     message: Message
   ) => {
-    if (message.deletedAt || message.sender.id !== user?.id) {
+    if (message.deletedAt) {
       return;
     }
 
@@ -2258,7 +2257,6 @@ export default function ChatsPage() {
                     const status = normalizeMessageStatus(message.status);
                     const isPending = Boolean(message.scheduledFor && !message.sentAt);
                     const reactionSummary = getReactionSummary(message);
-                    const isReactionPickerOpen = reactionPickerMessageId === message.id;
 
                     return (
                       <div
@@ -2311,40 +2309,6 @@ export default function ChatsPage() {
                               ))}
                             </div>
                           )}
-
-                          <div className="message-actions-row">
-                            <button
-                              type="button"
-                              className={`message-action-btn reaction-toggle ${
-                                isReactionPickerOpen ? "active" : ""
-                              }`}
-                              onClick={() =>
-                                setReactionPickerMessageId((current) =>
-                                  current === message.id ? null : message.id,
-                                )
-                              }
-                            >
-                              React
-                            </button>
-
-                            {isReactionPickerOpen && (
-                              <div className="inline-reactions">
-                                {REACTION_OPTIONS.map((emoji) => (
-                                  <button
-                                    key={`${message.id}-${emoji}-picker`}
-                                    type="button"
-                                    className="reaction-chip"
-                                    onClick={() => {
-                                      void handleReactToMessage(message.id, emoji);
-                                      setReactionPickerMessageId(null);
-                                    }}
-                                  >
-                                    {emoji}
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-                          </div>
 
                           {isPending && (
                             <div className="message-scheduled">
@@ -2694,6 +2658,14 @@ export default function ChatsPage() {
             </>
           ) : (
             <>
+              {(() => {
+                const isOwnMessage = contextMenu.message.sender.id === user?.id;
+                const isScheduledOwnMessage =
+                  isOwnMessage &&
+                  Boolean(contextMenu.message.scheduledFor && !contextMenu.message.sentAt);
+
+                return (
+                  <>
               <div className="context-menu-reactions">
                 {REACTION_OPTIONS.map((emoji) => (
                   <button
@@ -2709,7 +2681,7 @@ export default function ChatsPage() {
                   </button>
                 ))}
               </div>
-              {contextMenu.message.scheduledFor && !contextMenu.message.sentAt ? (
+              {isScheduledOwnMessage ? (
                 <>
                   <button
                     type="button"
@@ -2732,7 +2704,7 @@ export default function ChatsPage() {
                     Cancel scheduled
                   </button>
                 </>
-              ) : (
+              ) : isOwnMessage ? (
                 <>
                   <button
                     type="button"
@@ -2767,7 +2739,21 @@ export default function ChatsPage() {
                     Delete
                   </button>
                 </>
-              )}
+              ) : contextMenu.message.imageUrl ? (
+                <button
+                  type="button"
+                  className="context-menu-item"
+                  onClick={() => {
+                    downloadMessageImage(contextMenu.message);
+                    setContextMenu(null);
+                  }}
+                >
+                  Download image
+                </button>
+              ) : null}
+                  </>
+                );
+              })()}
             </>
           )}
         </div>
