@@ -123,7 +123,7 @@ export default function ForgotPasswordPage() {
 
                 {devResetUrl && (
                   <div className="auth-dev-link">
-                    <strong>Development reset link</strong>
+                    <strong>Reset link</strong>
                     <a href={devResetUrl}>{devResetUrl}</a>
                   </div>
                 )}

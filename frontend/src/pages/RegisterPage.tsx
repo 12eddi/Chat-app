@@ -83,9 +83,17 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      await registerRequest(payload);
+      const data = await registerRequest(payload);
       showToast("Account created. Please verify your email.", "success");
-      navigate(`/verify-email?email=${encodeURIComponent(payload.email)}`);
+      const verifyParams = new URLSearchParams({
+        email: payload.email,
+      });
+
+      if (data.verificationUrl) {
+        verifyParams.set("verificationUrl", data.verificationUrl);
+      }
+
+      navigate(`/verify-email?${verifyParams.toString()}`);
     } catch (err: any) {
       const message = err?.response?.data?.message || "Registration failed";
       setError(message);

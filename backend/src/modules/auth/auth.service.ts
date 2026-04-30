@@ -57,10 +57,6 @@ const getEmailVerificationUrl = (token: string) => {
   return `${env.primaryClientUrl}/verify-email?token=${encodeURIComponent(token)}`;
 };
 
-const shouldExposeResetUrl = () => {
-  return env.nodeEnv !== "production" && !isMailConfigured();
-};
-
 const sendInBackground = (label: string, task: () => Promise<unknown>) => {
   void task().catch((error) => {
     console.error(`Failed to send ${label}:`, error);
@@ -150,8 +146,7 @@ const issueEmailVerification = async (userId: string, email: string) => {
 
   return {
     message: "Verification email sent successfully",
-    verificationUrl:
-      env.nodeEnv !== "production" && !isMailConfigured() ? verificationUrl : undefined,
+    verificationUrl,
   };
 };
 
@@ -195,9 +190,12 @@ export const registerUser = async (data: RegisterInput) => {
     select: userSelect,
   });
 
-  await issueEmailVerification(user.id, user.email);
+  const verification = await issueEmailVerification(user.id, user.email);
 
-  return user;
+  return {
+    user,
+    verificationUrl: verification.verificationUrl,
+  };
 };
 
 export const loginUser = async (identifier: string, password: string) => {
@@ -343,7 +341,7 @@ export const requestPasswordReset = async (email: string) => {
 
   return {
     message: "If this email exists, a reset link has been sent.",
-    resetUrl: shouldExposeResetUrl() ? resetUrl : undefined,
+    resetUrl,
   };
 };
 

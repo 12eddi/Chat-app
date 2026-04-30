@@ -9,6 +9,7 @@ export type LoginResponse = {
 export type RegisterResponse = {
   message: string;
   user: User;
+  verificationUrl?: string;
 };
 
 export type MeResponse = {

@@ -12,6 +12,7 @@ export default function VerifyEmailPage() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token") || "";
   const email = searchParams.get("email") || "";
+  const verificationUrlParam = searchParams.get("verificationUrl") || "";
   const isTokenMode = useMemo(() => token.length > 0, [token]);
 
   const [message, setMessage] = useState(
@@ -22,7 +23,7 @@ export default function VerifyEmailPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(isTokenMode);
   const [resending, setResending] = useState(false);
-  const [devVerificationUrl, setDevVerificationUrl] = useState("");
+  const [devVerificationUrl, setDevVerificationUrl] = useState(verificationUrlParam);
 
   useEffect(() => {
     if (!isTokenMode) {
@@ -117,7 +118,7 @@ export default function VerifyEmailPage() {
               <>
                 {devVerificationUrl && (
                   <div className="auth-dev-link">
-                    <strong>Development verification link</strong>
+                    <strong>Verification link</strong>
                     <a href={devVerificationUrl}>{devVerificationUrl}</a>
                   </div>
                 )}
