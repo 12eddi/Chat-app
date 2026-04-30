@@ -13,9 +13,24 @@ const messages_service_1 = require("./modules/messages/messages.service");
 const message_scheduler_1 = require("./modules/messages/message-scheduler");
 const socket_1 = require("./socket");
 const server = http_1.default.createServer(app_1.default);
+const allowedOriginPatterns = [/\.vercel\.app$/i];
+const isAllowedOrigin = (origin) => {
+    if (!origin) {
+        return true;
+    }
+    if (env_1.env.clientUrls.includes(origin)) {
+        return true;
+    }
+    return allowedOriginPatterns.some((pattern) => pattern.test(origin));
+};
 const io = new socket_io_1.Server(server, {
     cors: {
-        origin: env_1.env.clientUrl,
+        origin(origin, callback) {
+            if (isAllowedOrigin(origin)) {
+                return callback(null, true);
+            }
+            return callback(new Error("Origin not allowed by Socket.IO CORS"));
+        },
         credentials: true,
     },
 });
@@ -102,7 +117,7 @@ io.on("connection", (socket) => {
         emitOnlineUsers();
     });
 });
-server.listen(env_1.env.port, () => {
-    console.log(`Server running on port ${env_1.env.port}`);
+server.listen(env_1.env.port, env_1.env.host, () => {
+    console.log(`Server running on ${env_1.env.host}:${env_1.env.port}`);
 });
 //# sourceMappingURL=server.js.map

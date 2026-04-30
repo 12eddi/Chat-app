@@ -44,29 +44,49 @@ const getSmtpConfig = () => {
         host: env_1.env.mail.host,
         port: env_1.env.mail.port,
         secure: env_1.env.mail.port === 465,
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 15000,
         auth: {
             user: env_1.env.mail.user,
             pass: env_1.env.mail.pass,
         },
     };
 };
+const sendWithResend = async ({ to, subject, html, text, }) => {
+    if (!env_1.env.resendApiKey || !env_1.env.mail?.from) {
+        return false;
+    }
+    const response = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${env_1.env.resendApiKey}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            from: env_1.env.mail.from,
+            to: [to],
+            subject,
+            html,
+            text,
+        }),
+    });
+    if (!response.ok) {
+        const errorBody = await response.text();
+        throw new Error(`Resend API error (${response.status}): ${errorBody}`);
+    }
+    return true;
+};
 const isMailConfigured = () => {
-    return Boolean(getSmtpConfig() && env_1.env.mail?.from);
+    return Boolean((env_1.env.resendApiKey && env_1.env.mail?.from) || (getSmtpConfig() && env_1.env.mail?.from));
 };
 exports.isMailConfigured = isMailConfigured;
 const sendPasswordResetEmail = async (email, resetUrl) => {
     const smtpConfig = getSmtpConfig();
     const from = env_1.env.mail?.from;
-    if (!smtpConfig || !from) {
-        return false;
-    }
-    const transporter = nodemailer.createTransport(smtpConfig);
-    await transporter.sendMail({
-        from,
-        to: email,
-        subject: "Reset your password",
-        text: `You requested a password reset.\n\nOpen this link to set a new password:\n${resetUrl}\n\nIf you did not request this, you can ignore this email.`,
-        html: `
+    const subject = "Reset your password";
+    const text = `You requested a password reset.\n\nOpen this link to set a new password:\n${resetUrl}\n\nIf you did not request this, you can ignore this email.`;
+    const html = `
       <div style="font-family: Arial, Helvetica, sans-serif; color: #111827; line-height: 1.6;">
         <h2 style="margin-bottom: 12px;">Reset your password</h2>
         <p>You requested a password reset for your chat app account.</p>
@@ -82,14 +102,15 @@ const sendPasswordResetEmail = async (email, resetUrl) => {
         <p><a href="${resetUrl}">${resetUrl}</a></p>
         <p>If you did not request this, you can ignore this email.</p>
       </div>
-    `,
-    });
-    return true;
-};
-exports.sendPasswordResetEmail = sendPasswordResetEmail;
-const sendEmailVerificationEmail = async (email, verificationUrl) => {
-    const smtpConfig = getSmtpConfig();
-    const from = env_1.env.mail?.from;
+    `;
+    if (env_1.env.resendApiKey && from) {
+        return sendWithResend({
+            to: email,
+            subject,
+            html,
+            text,
+        });
+    }
     if (!smtpConfig || !from) {
         return false;
     }
@@ -97,9 +118,19 @@ const sendEmailVerificationEmail = async (email, verificationUrl) => {
     await transporter.sendMail({
         from,
         to: email,
-        subject: "Verify your email address",
-        text: `Welcome to Chat App.\n\nOpen this link to verify your email:\n${verificationUrl}\n\nIf you did not create this account, you can ignore this email.`,
-        html: `
+        subject,
+        text,
+        html,
+    });
+    return true;
+};
+exports.sendPasswordResetEmail = sendPasswordResetEmail;
+const sendEmailVerificationEmail = async (email, verificationUrl) => {
+    const smtpConfig = getSmtpConfig();
+    const from = env_1.env.mail?.from;
+    const subject = "Verify your email address";
+    const text = `Welcome to Chat App.\n\nOpen this link to verify your email:\n${verificationUrl}\n\nIf you did not create this account, you can ignore this email.`;
+    const html = `
       <div style="font-family: Arial, Helvetica, sans-serif; color: #111827; line-height: 1.6;">
         <h2 style="margin-bottom: 12px;">Verify your email</h2>
         <p>Welcome to Chat App. Please confirm your email address to complete your account setup.</p>
@@ -115,7 +146,25 @@ const sendEmailVerificationEmail = async (email, verificationUrl) => {
         <p><a href="${verificationUrl}">${verificationUrl}</a></p>
         <p>If you did not create this account, you can ignore this email.</p>
       </div>
-    `,
+    `;
+    if (env_1.env.resendApiKey && from) {
+        return sendWithResend({
+            to: email,
+            subject,
+            html,
+            text,
+        });
+    }
+    if (!smtpConfig || !from) {
+        return false;
+    }
+    const transporter = nodemailer.createTransport(smtpConfig);
+    await transporter.sendMail({
+        from,
+        to: email,
+        subject,
+        text,
+        html,
     });
     return true;
 };

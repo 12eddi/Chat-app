@@ -15,6 +15,16 @@ const messages_routes_1 = __importDefault(require("./modules/messages/messages.r
 const notifications_routes_1 = __importDefault(require("./modules/notifications/notifications.routes"));
 const auth_middleware_1 = require("./middleware/auth.middleware");
 const app = (0, express_1.default)();
+const allowedOriginPatterns = [/\.vercel\.app$/i];
+const isAllowedOrigin = (origin) => {
+    if (!origin) {
+        return true;
+    }
+    if (env_1.env.clientUrls.includes(origin)) {
+        return true;
+    }
+    return allowedOriginPatterns.some((pattern) => pattern.test(origin));
+};
 app.use((_req, res, next) => {
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("X-Frame-Options", "DENY");
@@ -22,7 +32,12 @@ app.use((_req, res, next) => {
     next();
 });
 app.use((0, cors_1.default)({
-    origin: env_1.env.clientUrl,
+    origin(origin, callback) {
+        if (isAllowedOrigin(origin)) {
+            return callback(null, true);
+        }
+        return callback(new Error("Origin not allowed by CORS"));
+    },
     credentials: true,
 }));
 app.use(express_1.default.json());

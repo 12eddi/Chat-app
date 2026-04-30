@@ -35,10 +35,10 @@ const createTokenRecord = (ttlMinutes) => {
 const createPasswordResetToken = () => createTokenRecord(env_1.env.passwordResetTokenTtlMinutes);
 const createEmailVerificationToken = () => createTokenRecord(env_1.env.emailVerificationTokenTtlMinutes);
 const getPasswordResetUrl = (token) => {
-    return `${env_1.env.clientUrl}/forgot-password?token=${encodeURIComponent(token)}`;
+    return `${env_1.env.primaryClientUrl}/forgot-password?token=${encodeURIComponent(token)}`;
 };
 const getEmailVerificationUrl = (token) => {
-    return `${env_1.env.clientUrl}/verify-email?token=${encodeURIComponent(token)}`;
+    return `${env_1.env.primaryClientUrl}/verify-email?token=${encodeURIComponent(token)}`;
 };
 const shouldExposeResetUrl = () => {
     return env_1.env.nodeEnv !== "production" && !(0, mail_1.isMailConfigured)();
@@ -94,7 +94,12 @@ const issueEmailVerification = async (userId, email) => {
     WHERE "id" = ${userId}
   `;
     if ((0, mail_1.isMailConfigured)()) {
-        await (0, mail_1.sendEmailVerificationEmail)(email, verificationUrl);
+        try {
+            await (0, mail_1.sendEmailVerificationEmail)(email, verificationUrl);
+        }
+        catch (error) {
+            console.error("Failed to send email verification email:", error);
+        }
     }
     return {
         message: "Verification email sent successfully",
@@ -102,13 +107,24 @@ const issueEmailVerification = async (userId, email) => {
     };
 };
 const registerUser = async (data) => {
-    const { firstName, lastName, birthDate, email, username, password } = data;
+    const firstName = data.firstName.trim();
+    const lastName = data.lastName.trim();
+    const birthDate = data.birthDate;
+    const email = data.email.trim().toLowerCase();
+    const username = data.username.trim();
+    const password = data.password;
     const existingUser = await prisma_1.default.user.findFirst({
         where: {
             OR: [{ email }, { username }],
         },
     });
     if (existingUser) {
+        if (existingUser.email === email) {
+            throw new Error("Email is already taken");
+        }
+        if (existingUser.username === username) {
+            throw new Error("Username is already taken");
+        }
         throw new Error("User already exists");
     }
     const hashedPassword = await bcrypt_1.default.hash(password, 10);
@@ -244,7 +260,12 @@ const requestPasswordReset = async (email) => {
     WHERE "id" = ${user.id}
   `;
     if ((0, mail_1.isMailConfigured)()) {
-        await (0, mail_1.sendPasswordResetEmail)(user.email, resetUrl);
+        try {
+            await (0, mail_1.sendPasswordResetEmail)(user.email, resetUrl);
+        }
+        catch (error) {
+            console.error("Failed to send password reset email:", error);
+        }
     }
     return {
         message: "If this email exists, a reset link has been sent.",

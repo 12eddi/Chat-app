@@ -4,6 +4,7 @@ exports.env = void 0;
 require("dotenv/config");
 const DEFAULT_CLIENT_URL = "http://localhost:5173";
 const DEFAULT_PORT = 5000;
+const DEFAULT_HOST = "0.0.0.0";
 const DEFAULT_PASSWORD_RESET_TOKEN_TTL_MINUTES = 30;
 const DEFAULT_EMAIL_VERIFICATION_TOKEN_TTL_MINUTES = 60;
 const DEFAULT_SCHEDULED_MESSAGE_POLL_MS = 5000;
@@ -47,7 +48,13 @@ const parseBoolean = (value, fallback) => {
 };
 const databaseUrl = requireString(process.env.DATABASE_URL, "DATABASE_URL");
 const jwtSecret = requireString(process.env.JWT_SECRET, "JWT_SECRET");
-const clientUrl = process.env.CLIENT_URL?.trim() || DEFAULT_CLIENT_URL;
+const rawClientUrl = process.env.CLIENT_URL?.trim() || DEFAULT_CLIENT_URL;
+const clientUrls = rawClientUrl
+    .split(",")
+    .map((url) => url.trim())
+    .filter(Boolean);
+const primaryClientUrl = clientUrls[0] || DEFAULT_CLIENT_URL;
+const host = process.env.HOST?.trim() || DEFAULT_HOST;
 const port = parsePositiveInteger(process.env.PORT, DEFAULT_PORT, "PORT");
 const passwordResetTokenTtlMinutes = parsePositiveInteger(process.env.PASSWORD_RESET_TOKEN_TTL_MINUTES, DEFAULT_PASSWORD_RESET_TOKEN_TTL_MINUTES, "PASSWORD_RESET_TOKEN_TTL_MINUTES");
 const emailVerificationTokenTtlMinutes = parsePositiveInteger(process.env.EMAIL_VERIFICATION_TOKEN_TTL_MINUTES, DEFAULT_EMAIL_VERIFICATION_TOKEN_TTL_MINUTES, "EMAIL_VERIFICATION_TOKEN_TTL_MINUTES");
@@ -60,6 +67,7 @@ const smtpPortValue = process.env.SMTP_PORT?.trim();
 const smtpUser = process.env.SMTP_USER?.trim();
 const smtpPass = process.env.SMTP_PASS?.trim();
 const mailFrom = process.env.MAIL_FROM?.trim();
+const resendApiKey = process.env.RESEND_API_KEY?.trim() || null;
 const hasAnyMailSetting = Boolean(smtpHost || smtpPortValue || smtpUser || smtpPass || mailFrom);
 const hasAllMailSettings = Boolean(smtpHost && smtpPortValue && smtpUser && smtpPass && mailFrom);
 if (hasAnyMailSetting && !hasAllMailSettings) {
@@ -71,8 +79,11 @@ const smtpPort = hasAllMailSettings
 const googleClientId = process.env.GOOGLE_CLIENT_ID?.trim() || null;
 exports.env = {
     nodeEnv: process.env.NODE_ENV || "development",
+    host,
     port,
-    clientUrl,
+    clientUrl: rawClientUrl,
+    clientUrls,
+    primaryClientUrl,
     databaseUrl,
     jwtSecret,
     passwordResetTokenTtlMinutes,
@@ -82,6 +93,7 @@ exports.env = {
     scheduledMessageErrorBackoffMs,
     runScheduledMessageProcessor,
     googleClientId,
+    resendApiKey,
     mail: hasAllMailSettings && smtpPort
         ? {
             host: smtpHost,

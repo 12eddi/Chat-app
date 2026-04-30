@@ -1,8 +1,11 @@
 import "dotenv/config";
 export declare const env: {
     nodeEnv: string;
+    host: string;
     port: number;
     clientUrl: string;
+    clientUrls: string[];
+    primaryClientUrl: string;
     databaseUrl: string;
     jwtSecret: string;
     passwordResetTokenTtlMinutes: number;
@@ -12,6 +15,7 @@ export declare const env: {
     scheduledMessageErrorBackoffMs: number;
     runScheduledMessageProcessor: boolean;
     googleClientId: string | null;
+    resendApiKey: string | null;
     mail: {
         host: string;
         port: number;
