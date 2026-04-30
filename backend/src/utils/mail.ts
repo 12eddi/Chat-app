@@ -87,6 +87,20 @@ export const sendPasswordResetEmail = async (email: string, resetUrl: string) =>
       </div>
     `;
 
+  if (smtpConfig && from) {
+    const transporter = nodemailer.createTransport(smtpConfig);
+
+    await transporter.sendMail({
+      from,
+      to: email,
+      subject,
+      text,
+      html,
+    });
+
+    return true;
+  }
+
   if (env.resendApiKey && from) {
     return sendWithResend({
       to: email,
@@ -96,21 +110,7 @@ export const sendPasswordResetEmail = async (email: string, resetUrl: string) =>
     });
   }
 
-  if (!smtpConfig || !from) {
-    return false;
-  }
-
-  const transporter = nodemailer.createTransport(smtpConfig);
-
-  await transporter.sendMail({
-    from,
-    to: email,
-    subject,
-    text,
-    html,
-  });
-
-  return true;
+  return false;
 };
 
 export const sendEmailVerificationEmail = async (
@@ -139,6 +139,20 @@ export const sendEmailVerificationEmail = async (
       </div>
     `;
 
+  if (smtpConfig && from) {
+    const transporter = nodemailer.createTransport(smtpConfig);
+
+    await transporter.sendMail({
+      from,
+      to: email,
+      subject,
+      text,
+      html,
+    });
+
+    return true;
+  }
+
   if (env.resendApiKey && from) {
     return sendWithResend({
       to: email,
@@ -148,19 +162,5 @@ export const sendEmailVerificationEmail = async (
     });
   }
 
-  if (!smtpConfig || !from) {
-    return false;
-  }
-
-  const transporter = nodemailer.createTransport(smtpConfig);
-
-  await transporter.sendMail({
-    from,
-    to: email,
-    subject,
-    text,
-    html,
-  });
-
-  return true;
+  return false;
 };
