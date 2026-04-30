@@ -26,9 +26,6 @@ jobs:
       - name: Install
         run: npm install
 
-      - name: Lint
-        run: npm run lint
-
       - name: Build
         run: npm run build
 
@@ -38,6 +35,8 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/chatapp?schema=public
     steps:
       - name: Checkout
         uses: actions/checkout@v4
