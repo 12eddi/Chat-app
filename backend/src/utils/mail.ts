@@ -7,17 +7,12 @@ const getSmtpConfig = () => {
   }
 
   return {
-    service: env.mail.host === "smtp.gmail.com" ? "gmail" : undefined,
     host: env.mail.host,
     port: env.mail.port,
     secure: env.mail.port === 465,
-    requireTLS: env.mail.port !== 465,
     connectionTimeout: 30000,
     greetingTimeout: 30000,
     socketTimeout: 30000,
-    tls: {
-      servername: env.mail.host,
-    },
     auth: {
       user: env.mail.user,
       pass: env.mail.pass,

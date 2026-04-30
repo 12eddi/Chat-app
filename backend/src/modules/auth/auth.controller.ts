@@ -78,8 +78,9 @@ export const forgotPassword = async (req: Request, res: Response) => {
 
     return res.status(200).json(result);
   } catch (error: any) {
-    return res.status(400).json({
-      message: error.message,
+    console.error("Forgot password request failed:", error);
+    return res.status(200).json({
+      message: "If this email exists, a reset link has been sent.",
     });
   }
 };
@@ -150,8 +151,9 @@ export const resendVerification = async (req: Request, res: Response) => {
 
     return res.status(200).json(result);
   } catch (error: any) {
-    return res.status(400).json({
-      message: error.message,
+    console.error("Resend verification request failed:", error);
+    return res.status(200).json({
+      message: "If this email exists, a verification email has been sent.",
     });
   }
 };
