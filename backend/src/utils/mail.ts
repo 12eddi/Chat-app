@@ -31,7 +31,9 @@ const sendWithResend = async ({
   html: string;
   text: string;
 }) => {
-  if (!env.resendApiKey || !env.mail?.from) {
+  const from = process.env.MAIL_FROM ?? env.mail?.from;
+
+  if (!env.resendApiKey || !from) {
     return false;
   }
 
@@ -42,7 +44,7 @@ const sendWithResend = async ({
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: env.mail.from,
+      from,
       to: [to],
       subject,
       html,
