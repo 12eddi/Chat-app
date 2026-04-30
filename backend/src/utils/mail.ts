@@ -1,32 +1,94 @@
 import * as nodemailer from "nodemailer";
 import { env } from "../config/env";
 
-const getSmtpConfig = () => {
-  if (!env.mail) {
-    return null;
-  }
+type SmtpConfig = {
+  host: string;
+  port: number;
+  secure: boolean;
+  connectionTimeout: number;
+  greetingTimeout: number;
+  socketTimeout: number;
+  auth: {
+    user: string;
+    pass: string;
+  };
+};
 
+const createSmtpConfig = (port: number): SmtpConfig => {
   return {
-    host: env.mail.host,
-    port: env.mail.port,
-    secure: env.mail.port === 465,
-    connectionTimeout: 30000,
-    greetingTimeout: 30000,
-    socketTimeout: 30000,
+    host: env.mail!.host,
+    port,
+    secure: port === 465,
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 10000,
     auth: {
-      user: env.mail.user,
-      pass: env.mail.pass,
+      user: env.mail!.user,
+      pass: env.mail!.pass,
     },
   };
 };
 
+const getSmtpConfigs = () => {
+  if (!env.mail) {
+    return [] as SmtpConfig[];
+  }
+
+  const configs = [createSmtpConfig(env.mail.port)];
+
+  if (env.mail.host === "smtp.gmail.com") {
+    const fallbackPort = env.mail.port === 465 ? 587 : 465;
+    configs.push(createSmtpConfig(fallbackPort));
+  }
+
+  return configs;
+};
+
 export const isMailConfigured = () => {
-  return Boolean(getSmtpConfig() && env.mail?.from);
+  return getSmtpConfigs().length > 0 && Boolean(env.mail?.from);
+};
+
+const sendMail = async (options: {
+  to: string;
+  subject: string;
+  text: string;
+  html: string;
+}) => {
+  const configs = getSmtpConfigs();
+  const from = env.mail?.from;
+
+  if (!configs.length || !from) {
+    return false;
+  }
+
+  let lastError: unknown;
+
+  for (const config of configs) {
+    try {
+      const transporter = nodemailer.createTransport(config);
+
+      await transporter.sendMail({
+        from,
+        to: options.to,
+        subject: options.subject,
+        text: options.text,
+        html: options.html,
+      });
+
+      return true;
+    } catch (error) {
+      lastError = error;
+      console.error(
+        `SMTP send failed via ${config.host}:${config.port}${config.secure ? " (secure)" : ""}:`,
+        error
+      );
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error("Email sending failed");
 };
 
 export const sendPasswordResetEmail = async (email: string, resetUrl: string) => {
-  const smtpConfig = getSmtpConfig();
-  const from = env.mail?.from;
   const subject = "Reset your password";
   const text = `You requested a password reset.\n\nOpen this link to set a new password:\n${resetUrl}\n\nIf you did not request this, you can ignore this email.`;
   const html = `
@@ -47,29 +109,18 @@ export const sendPasswordResetEmail = async (email: string, resetUrl: string) =>
       </div>
     `;
 
-  if (smtpConfig && from) {
-    const transporter = nodemailer.createTransport(smtpConfig);
-
-    await transporter.sendMail({
-      from,
-      to: email,
-      subject,
-      text,
-      html,
-    });
-
-    return true;
-  }
-
-  return false;
+  return sendMail({
+    to: email,
+    subject,
+    text,
+    html,
+  });
 };
 
 export const sendEmailVerificationEmail = async (
   email: string,
   verificationUrl: string
 ) => {
-  const smtpConfig = getSmtpConfig();
-  const from = env.mail?.from;
   const subject = "Verify your email address";
   const text = `Welcome to Chat App.\n\nOpen this link to verify your email:\n${verificationUrl}\n\nIf you did not create this account, you can ignore this email.`;
   const html = `
@@ -90,19 +141,10 @@ export const sendEmailVerificationEmail = async (
       </div>
     `;
 
-  if (smtpConfig && from) {
-    const transporter = nodemailer.createTransport(smtpConfig);
-
-    await transporter.sendMail({
-      from,
-      to: email,
-      subject,
-      text,
-      html,
-    });
-
-    return true;
-  }
-
-  return false;
+  return sendMail({
+    to: email,
+    subject,
+    text,
+    html,
+  });
 };

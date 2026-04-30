@@ -61,6 +61,12 @@ const shouldExposeResetUrl = () => {
   return env.nodeEnv !== "production" && !isMailConfigured();
 };
 
+const sendInBackground = (label: string, task: () => Promise<unknown>) => {
+  void task().catch((error) => {
+    console.error(`Failed to send ${label}:`, error);
+  });
+};
+
 const issueAuthPayload = (user: {
   id: string;
   firstName: string;
@@ -137,11 +143,9 @@ const issueEmailVerification = async (userId: string, email: string) => {
   `;
 
   if (isMailConfigured()) {
-    try {
-      await sendEmailVerificationEmail(email, verificationUrl);
-    } catch (error) {
-      console.error("Failed to send email verification email:", error);
-    }
+    sendInBackground("email verification email", () =>
+      sendEmailVerificationEmail(email, verificationUrl)
+    );
   }
 
   return {
@@ -332,11 +336,9 @@ export const requestPasswordReset = async (email: string) => {
   `;
 
   if (isMailConfigured()) {
-    try {
-      await sendPasswordResetEmail(user.email, resetUrl);
-    } catch (error) {
-      console.error("Failed to send password reset email:", error);
-    }
+    sendInBackground("password reset email", () =>
+      sendPasswordResetEmail(user.email, resetUrl)
+    );
   }
 
   return {
