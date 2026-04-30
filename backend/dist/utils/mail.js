@@ -41,44 +41,25 @@ const getSmtpConfig = () => {
         return null;
     }
     return {
+        service: env_1.env.mail.host === "smtp.gmail.com" ? "gmail" : undefined,
         host: env_1.env.mail.host,
         port: env_1.env.mail.port,
         secure: env_1.env.mail.port === 465,
-        connectionTimeout: 10000,
-        greetingTimeout: 10000,
-        socketTimeout: 15000,
+        requireTLS: env_1.env.mail.port !== 465,
+        connectionTimeout: 30000,
+        greetingTimeout: 30000,
+        socketTimeout: 30000,
+        tls: {
+            servername: env_1.env.mail.host,
+        },
         auth: {
             user: env_1.env.mail.user,
             pass: env_1.env.mail.pass,
         },
     };
 };
-const sendWithResend = async ({ to, subject, html, text, }) => {
-    if (!env_1.env.resendApiKey || !env_1.env.mail?.from) {
-        return false;
-    }
-    const response = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${env_1.env.resendApiKey}`,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            from: env_1.env.mail.from,
-            to: [to],
-            subject,
-            html,
-            text,
-        }),
-    });
-    if (!response.ok) {
-        const errorBody = await response.text();
-        throw new Error(`Resend API error (${response.status}): ${errorBody}`);
-    }
-    return true;
-};
 const isMailConfigured = () => {
-    return Boolean((env_1.env.resendApiKey && env_1.env.mail?.from) || (getSmtpConfig() && env_1.env.mail?.from));
+    return Boolean(getSmtpConfig() && env_1.env.mail?.from);
 };
 exports.isMailConfigured = isMailConfigured;
 const sendPasswordResetEmail = async (email, resetUrl) => {
@@ -103,26 +84,18 @@ const sendPasswordResetEmail = async (email, resetUrl) => {
         <p>If you did not request this, you can ignore this email.</p>
       </div>
     `;
-    if (env_1.env.resendApiKey && from) {
-        return sendWithResend({
+    if (smtpConfig && from) {
+        const transporter = nodemailer.createTransport(smtpConfig);
+        await transporter.sendMail({
+            from,
             to: email,
             subject,
-            html,
             text,
+            html,
         });
+        return true;
     }
-    if (!smtpConfig || !from) {
-        return false;
-    }
-    const transporter = nodemailer.createTransport(smtpConfig);
-    await transporter.sendMail({
-        from,
-        to: email,
-        subject,
-        text,
-        html,
-    });
-    return true;
+    return false;
 };
 exports.sendPasswordResetEmail = sendPasswordResetEmail;
 const sendEmailVerificationEmail = async (email, verificationUrl) => {
@@ -147,26 +120,18 @@ const sendEmailVerificationEmail = async (email, verificationUrl) => {
         <p>If you did not create this account, you can ignore this email.</p>
       </div>
     `;
-    if (env_1.env.resendApiKey && from) {
-        return sendWithResend({
+    if (smtpConfig && from) {
+        const transporter = nodemailer.createTransport(smtpConfig);
+        await transporter.sendMail({
+            from,
             to: email,
             subject,
-            html,
             text,
+            html,
         });
+        return true;
     }
-    if (!smtpConfig || !from) {
-        return false;
-    }
-    const transporter = nodemailer.createTransport(smtpConfig);
-    await transporter.sendMail({
-        from,
-        to: email,
-        subject,
-        text,
-        html,
-    });
-    return true;
+    return false;
 };
 exports.sendEmailVerificationEmail = sendEmailVerificationEmail;
 //# sourceMappingURL=mail.js.map

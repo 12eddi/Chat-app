@@ -15,7 +15,6 @@ export declare const env: {
     scheduledMessageErrorBackoffMs: number;
     runScheduledMessageProcessor: boolean;
     googleClientId: string | null;
-    resendApiKey: string | null;
     mail: {
         host: string;
         port: number;

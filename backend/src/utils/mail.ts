@@ -7,12 +7,17 @@ const getSmtpConfig = () => {
   }
 
   return {
+    service: env.mail.host === "smtp.gmail.com" ? "gmail" : undefined,
     host: env.mail.host,
     port: env.mail.port,
     secure: env.mail.port === 465,
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 15000,
+    requireTLS: env.mail.port !== 465,
+    connectionTimeout: 30000,
+    greetingTimeout: 30000,
+    socketTimeout: 30000,
+    tls: {
+      servername: env.mail.host,
+    },
     auth: {
       user: env.mail.user,
       pass: env.mail.pass,
@@ -20,48 +25,8 @@ const getSmtpConfig = () => {
   };
 };
 
-const sendWithResend = async ({
-  to,
-  subject,
-  html,
-  text,
-}: {
-  to: string;
-  subject: string;
-  html: string;
-  text: string;
-}) => {
-  const from = process.env.MAIL_FROM ?? env.mail?.from;
-
-  if (!env.resendApiKey || !from) {
-    return false;
-  }
-
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${env.resendApiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from,
-      to: [to],
-      subject,
-      html,
-      text,
-    }),
-  });
-
-  if (!response.ok) {
-    const errorBody = await response.text();
-    throw new Error(`Resend API error (${response.status}): ${errorBody}`);
-  }
-
-  return true;
-};
-
 export const isMailConfigured = () => {
-  return Boolean((env.resendApiKey && env.mail?.from) || (getSmtpConfig() && env.mail?.from));
+  return Boolean(getSmtpConfig() && env.mail?.from);
 };
 
 export const sendPasswordResetEmail = async (email: string, resetUrl: string) => {
@@ -99,15 +64,6 @@ export const sendPasswordResetEmail = async (email: string, resetUrl: string) =>
     });
 
     return true;
-  }
-
-  if (env.resendApiKey && from) {
-    return sendWithResend({
-      to: email,
-      subject,
-      html,
-      text,
-    });
   }
 
   return false;
@@ -151,15 +107,6 @@ export const sendEmailVerificationEmail = async (
     });
 
     return true;
-  }
-
-  if (env.resendApiKey && from) {
-    return sendWithResend({
-      to: email,
-      subject,
-      html,
-      text,
-    });
   }
 
   return false;

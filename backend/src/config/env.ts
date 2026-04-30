@@ -113,7 +113,6 @@ const smtpPortValue = process.env.SMTP_PORT?.trim();
 const smtpUser = process.env.SMTP_USER?.trim();
 const smtpPass = process.env.SMTP_PASS?.trim();
 const mailFrom = process.env.MAIL_FROM?.trim();
-const resendApiKey = process.env.RESEND_API_KEY?.trim() || null;
 
 const hasAnyMailSetting = Boolean(
   smtpHost || smtpPortValue || smtpUser || smtpPass || mailFrom
@@ -151,7 +150,6 @@ export const env = {
   scheduledMessageErrorBackoffMs,
   runScheduledMessageProcessor,
   googleClientId,
-  resendApiKey,
   mail:
     hasAllMailSettings && smtpPort
       ? {
