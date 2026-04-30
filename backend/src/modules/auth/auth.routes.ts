@@ -29,13 +29,13 @@ const loginRateLimit = createRateLimit({
 
 const passwordResetRateLimit = createRateLimit({
   windowMs: 15 * 60 * 1000,
-  maxRequests: 5,
+  maxRequests: 25,
   message: "Too many password reset attempts. Please try again later.",
 });
 
 const verificationRateLimit = createRateLimit({
   windowMs: 15 * 60 * 1000,
-  maxRequests: 6,
+  maxRequests: 20,
   message: "Too many verification attempts. Please try again later.",
 });
 
