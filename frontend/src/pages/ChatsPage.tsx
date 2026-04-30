@@ -42,7 +42,8 @@ import type { User } from "../types/user";
 import { normalizeMessageStatus } from "../utils/messageStatus";
 import "./ChatsPage.css";
 
-const API_BASE_URL = "http://localhost:5000";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, "") || "http://localhost:5000";
 
 type TypingPayload = {
   chatId: string;
