@@ -1164,6 +1164,33 @@ body,
   opacity: 0.74;
 }
 
+.message-actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.message-action-btn.reaction-toggle.active {
+  background: rgba(139, 92, 246, 0.18);
+  border-color: rgba(139, 92, 246, 0.32);
+}
+
+.message-bubble.them .message-action-btn.reaction-toggle.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: rgba(139, 92, 246, 0.18);
+}
+
+.inline-reactions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
 .message-bubble.outbox {
   border: 1px dashed rgba(148, 163, 184, 0.55);
 }
