@@ -7,16 +7,19 @@ type RegisterInput = {
     password: string;
 };
 export declare const registerUser: (data: RegisterInput) => Promise<{
-    email: string;
-    id: string;
-    firstName: string;
-    lastName: string;
-    birthDate: Date | null;
-    username: string;
-    profilePhotoUrl: string | null;
-    emailVerified: boolean;
-    createdAt: Date;
-    updatedAt: Date;
+    user: {
+        email: string;
+        id: string;
+        firstName: string;
+        lastName: string;
+        birthDate: Date | null;
+        username: string;
+        profilePhotoUrl: string | null;
+        emailVerified: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+    };
+    verificationUrl: string;
 }>;
 export declare const loginUser: (identifier: string, password: string) => Promise<{
     token: string;
@@ -65,7 +68,7 @@ export declare const requestPasswordReset: (email: string) => Promise<{
     resetUrl?: never;
 } | {
     message: string;
-    resetUrl: string | undefined;
+    resetUrl: string;
 }>;
 export declare const resetPassword: (token: string, newPassword: string) => Promise<{
     message: string;
@@ -78,7 +81,7 @@ export declare const resendVerificationEmail: (email: string) => Promise<{
     verificationUrl?: never;
 } | {
     message: string;
-    verificationUrl: string | undefined;
+    verificationUrl: string;
 }>;
 export {};
 //# sourceMappingURL=auth.service.d.ts.map

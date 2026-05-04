@@ -17,13 +17,19 @@ import {
   validateOptionalMessageContent,
 } from "../../utils/validation";
 import { createNotification } from "../notifications/notifications.service";
+import { uploadImageBuffer } from "../../utils/cloudinary";
 
-const buildImageUrl = (file?: { filename: string } | null) => {
+type UploadedMessageImage = {
+  buffer: Buffer;
+};
+
+const buildImageUrl = async (file?: UploadedMessageImage | null) => {
   if (!file) {
     return null;
   }
 
-  return `/uploads/${file.filename}`;
+  const uploadedImage = await uploadImageBuffer(file, "chat-app/messages");
+  return uploadedImage.secure_url;
 };
 
 const emitImmediateMessageDelivery = async (
@@ -81,7 +87,9 @@ export const createMessage = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Invalid chat id" });
     }
 
-    const imageUrl = buildImageUrl(req.file || undefined);
+    const uploadedImageFile =
+      (req.file as unknown as UploadedMessageImage | undefined) || undefined;
+    const imageUrl = await buildImageUrl(uploadedImageFile);
     const scheduledFor = parseScheduledFor(req.body?.scheduledFor);
     const content = imageUrl
       ? validateOptionalMessageContent(req.body?.content)

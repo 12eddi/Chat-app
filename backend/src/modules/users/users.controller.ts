@@ -7,6 +7,7 @@ import {
   changePassword,
 } from "./users.service";
 import { isValidUuid, validateSearchQuery } from "../../utils/validation";
+import { uploadImageBuffer, type UploadedImageFile } from "../../utils/cloudinary";
 
 /* ===================== SEARCH USERS ===================== */
 export const searchUsersController = async (req: Request, res: Response) => {
@@ -140,7 +141,11 @@ export const uploadPhotoController = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "No file uploaded" });
     }
 
-    const imageUrl = `/uploads/${req.file.filename}`;
+    const uploadedImage = await uploadImageBuffer(
+      req.file as unknown as UploadedImageFile,
+      "chat-app/avatars"
+    );
+    const imageUrl = uploadedImage.secure_url;
 
     const updatedUser = await prisma.user.update({
       where: { id: userId },

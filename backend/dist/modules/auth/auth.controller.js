@@ -5,10 +5,11 @@ const auth_service_1 = require("./auth.service");
 const env_1 = require("../../config/env");
 const register = async (req, res) => {
     try {
-        const user = await (0, auth_service_1.registerUser)(req.body);
+        const result = await (0, auth_service_1.registerUser)(req.body);
         res.status(201).json({
             message: "User created",
-            user,
+            user: result.user,
+            verificationUrl: result.verificationUrl,
         });
     }
     catch (error) {
@@ -66,8 +67,9 @@ const forgotPassword = async (req, res) => {
         return res.status(200).json(result);
     }
     catch (error) {
-        return res.status(400).json({
-            message: error.message,
+        console.error("Forgot password request failed:", error);
+        return res.status(200).json({
+            message: "If this email exists, a reset link has been sent.",
         });
     }
 };
@@ -130,8 +132,9 @@ const resendVerification = async (req, res) => {
         return res.status(200).json(result);
     }
     catch (error) {
-        return res.status(400).json({
-            message: error.message,
+        console.error("Resend verification request failed:", error);
+        return res.status(200).json({
+            message: "If this email exists, a verification email has been sent.",
         });
     }
 };

@@ -36,35 +36,62 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendEmailVerificationEmail = exports.sendPasswordResetEmail = exports.isMailConfigured = void 0;
 const nodemailer = __importStar(require("nodemailer"));
 const env_1 = require("../config/env");
-const getSmtpConfig = () => {
-    if (!env_1.env.mail) {
-        return null;
-    }
+const createSmtpConfig = (port) => {
     return {
-        service: env_1.env.mail.host === "smtp.gmail.com" ? "gmail" : undefined,
         host: env_1.env.mail.host,
-        port: env_1.env.mail.port,
-        secure: env_1.env.mail.port === 465,
-        requireTLS: env_1.env.mail.port !== 465,
-        connectionTimeout: 30000,
-        greetingTimeout: 30000,
-        socketTimeout: 30000,
-        tls: {
-            servername: env_1.env.mail.host,
-        },
+        port,
+        secure: port === 465,
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 10000,
         auth: {
             user: env_1.env.mail.user,
             pass: env_1.env.mail.pass,
         },
     };
 };
+const getSmtpConfigs = () => {
+    if (!env_1.env.mail) {
+        return [];
+    }
+    const configs = [createSmtpConfig(env_1.env.mail.port)];
+    if (env_1.env.mail.host === "smtp.gmail.com") {
+        const fallbackPort = env_1.env.mail.port === 465 ? 587 : 465;
+        configs.push(createSmtpConfig(fallbackPort));
+    }
+    return configs;
+};
 const isMailConfigured = () => {
-    return Boolean(getSmtpConfig() && env_1.env.mail?.from);
+    return getSmtpConfigs().length > 0 && Boolean(env_1.env.mail?.from);
 };
 exports.isMailConfigured = isMailConfigured;
-const sendPasswordResetEmail = async (email, resetUrl) => {
-    const smtpConfig = getSmtpConfig();
+const sendMail = async (options) => {
+    const configs = getSmtpConfigs();
     const from = env_1.env.mail?.from;
+    if (!configs.length || !from) {
+        return false;
+    }
+    let lastError;
+    for (const config of configs) {
+        try {
+            const transporter = nodemailer.createTransport(config);
+            await transporter.sendMail({
+                from,
+                to: options.to,
+                subject: options.subject,
+                text: options.text,
+                html: options.html,
+            });
+            return true;
+        }
+        catch (error) {
+            lastError = error;
+            console.error(`SMTP send failed via ${config.host}:${config.port}${config.secure ? " (secure)" : ""}:`, error);
+        }
+    }
+    throw lastError instanceof Error ? lastError : new Error("Email sending failed");
+};
+const sendPasswordResetEmail = async (email, resetUrl) => {
     const subject = "Reset your password";
     const text = `You requested a password reset.\n\nOpen this link to set a new password:\n${resetUrl}\n\nIf you did not request this, you can ignore this email.`;
     const html = `
@@ -84,23 +111,15 @@ const sendPasswordResetEmail = async (email, resetUrl) => {
         <p>If you did not request this, you can ignore this email.</p>
       </div>
     `;
-    if (smtpConfig && from) {
-        const transporter = nodemailer.createTransport(smtpConfig);
-        await transporter.sendMail({
-            from,
-            to: email,
-            subject,
-            text,
-            html,
-        });
-        return true;
-    }
-    return false;
+    return sendMail({
+        to: email,
+        subject,
+        text,
+        html,
+    });
 };
 exports.sendPasswordResetEmail = sendPasswordResetEmail;
 const sendEmailVerificationEmail = async (email, verificationUrl) => {
-    const smtpConfig = getSmtpConfig();
-    const from = env_1.env.mail?.from;
     const subject = "Verify your email address";
     const text = `Welcome to Chat App.\n\nOpen this link to verify your email:\n${verificationUrl}\n\nIf you did not create this account, you can ignore this email.`;
     const html = `
@@ -120,18 +139,12 @@ const sendEmailVerificationEmail = async (email, verificationUrl) => {
         <p>If you did not create this account, you can ignore this email.</p>
       </div>
     `;
-    if (smtpConfig && from) {
-        const transporter = nodemailer.createTransport(smtpConfig);
-        await transporter.sendMail({
-            from,
-            to: email,
-            subject,
-            text,
-            html,
-        });
-        return true;
-    }
-    return false;
+    return sendMail({
+        to: email,
+        subject,
+        text,
+        html,
+    });
 };
 exports.sendEmailVerificationEmail = sendEmailVerificationEmail;
 //# sourceMappingURL=mail.js.map

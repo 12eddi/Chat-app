@@ -40,8 +40,10 @@ const getPasswordResetUrl = (token) => {
 const getEmailVerificationUrl = (token) => {
     return `${env_1.env.primaryClientUrl}/verify-email?token=${encodeURIComponent(token)}`;
 };
-const shouldExposeResetUrl = () => {
-    return env_1.env.nodeEnv !== "production" && !(0, mail_1.isMailConfigured)();
+const sendInBackground = (label, task) => {
+    void task().catch((error) => {
+        console.error(`Failed to send ${label}:`, error);
+    });
 };
 const issueAuthPayload = (user) => {
     const token = jsonwebtoken_1.default.sign({ userId: user.id, email: user.email }, env_1.env.jwtSecret, {
@@ -94,16 +96,11 @@ const issueEmailVerification = async (userId, email) => {
     WHERE "id" = ${userId}
   `;
     if ((0, mail_1.isMailConfigured)()) {
-        try {
-            await (0, mail_1.sendEmailVerificationEmail)(email, verificationUrl);
-        }
-        catch (error) {
-            console.error("Failed to send email verification email:", error);
-        }
+        sendInBackground("email verification email", () => (0, mail_1.sendEmailVerificationEmail)(email, verificationUrl));
     }
     return {
         message: "Verification email sent successfully",
-        verificationUrl: env_1.env.nodeEnv !== "production" && !(0, mail_1.isMailConfigured)() ? verificationUrl : undefined,
+        verificationUrl,
     };
 };
 const registerUser = async (data) => {
@@ -139,8 +136,11 @@ const registerUser = async (data) => {
         },
         select: userSelect,
     });
-    await issueEmailVerification(user.id, user.email);
-    return user;
+    const verification = await issueEmailVerification(user.id, user.email);
+    return {
+        user,
+        verificationUrl: verification.verificationUrl,
+    };
 };
 exports.registerUser = registerUser;
 const loginUser = async (identifier, password) => {
@@ -260,16 +260,11 @@ const requestPasswordReset = async (email) => {
     WHERE "id" = ${user.id}
   `;
     if ((0, mail_1.isMailConfigured)()) {
-        try {
-            await (0, mail_1.sendPasswordResetEmail)(user.email, resetUrl);
-        }
-        catch (error) {
-            console.error("Failed to send password reset email:", error);
-        }
+        sendInBackground("password reset email", () => (0, mail_1.sendPasswordResetEmail)(user.email, resetUrl));
     }
     return {
         message: "If this email exists, a reset link has been sent.",
-        resetUrl: shouldExposeResetUrl() ? resetUrl : undefined,
+        resetUrl,
     };
 };
 exports.requestPasswordReset = requestPasswordReset;

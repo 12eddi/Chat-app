@@ -76,6 +76,14 @@ const smtpPort = hasAllMailSettings
     ? parsePositiveInteger(smtpPortValue, 0, "SMTP_PORT")
     : null;
 const googleClientId = process.env.GOOGLE_CLIENT_ID?.trim() || null;
+const cloudinaryCloudName = process.env.CLOUDINARY_CLOUD_NAME?.trim();
+const cloudinaryApiKey = process.env.CLOUDINARY_API_KEY?.trim();
+const cloudinaryApiSecret = process.env.CLOUDINARY_API_SECRET?.trim();
+const hasAnyCloudinarySetting = Boolean(cloudinaryCloudName || cloudinaryApiKey || cloudinaryApiSecret);
+const hasAllCloudinarySettings = Boolean(cloudinaryCloudName && cloudinaryApiKey && cloudinaryApiSecret);
+if (hasAnyCloudinarySetting && !hasAllCloudinarySettings) {
+    throw new Error("Cloudinary configuration is incomplete. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET together.");
+}
 exports.env = {
     nodeEnv: process.env.NODE_ENV || "development",
     host,
@@ -92,6 +100,13 @@ exports.env = {
     scheduledMessageErrorBackoffMs,
     runScheduledMessageProcessor,
     googleClientId,
+    cloudinary: hasAllCloudinarySettings
+        ? {
+            cloudName: cloudinaryCloudName,
+            apiKey: cloudinaryApiKey,
+            apiSecret: cloudinaryApiSecret,
+        }
+        : null,
     mail: hasAllMailSettings && smtpPort
         ? {
             host: smtpHost,

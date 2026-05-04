@@ -5,11 +5,13 @@ const messages_service_1 = require("./messages.service");
 const socket_1 = require("../../socket");
 const validation_1 = require("../../utils/validation");
 const notifications_service_1 = require("../notifications/notifications.service");
-const buildImageUrl = (file) => {
+const cloudinary_1 = require("../../utils/cloudinary");
+const buildImageUrl = async (file) => {
     if (!file) {
         return null;
     }
-    return `/uploads/${file.filename}`;
+    const uploadedImage = await (0, cloudinary_1.uploadImageBuffer)(file, "chat-app/messages");
+    return uploadedImage.secure_url;
 };
 const emitImmediateMessageDelivery = async (message, recipientIds) => {
     const io = (0, socket_1.getSocketServer)();
@@ -45,7 +47,8 @@ const createMessage = async (req, res) => {
         if (!(0, validation_1.isValidUuid)(chatId)) {
             return res.status(400).json({ message: "Invalid chat id" });
         }
-        const imageUrl = buildImageUrl(req.file || undefined);
+        const uploadedImageFile = req.file || undefined;
+        const imageUrl = await buildImageUrl(uploadedImageFile);
         const scheduledFor = (0, validation_1.parseScheduledFor)(req.body?.scheduledFor);
         const content = imageUrl
             ? (0, validation_1.validateOptionalMessageContent)(req.body?.content)

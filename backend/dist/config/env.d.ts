@@ -15,6 +15,11 @@ export declare const env: {
     scheduledMessageErrorBackoffMs: number;
     runScheduledMessageProcessor: boolean;
     googleClientId: string | null;
+    cloudinary: {
+        cloudName: string;
+        apiKey: string;
+        apiSecret: string;
+    } | null;
     mail: {
         host: string;
         port: number;

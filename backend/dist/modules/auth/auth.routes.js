@@ -17,12 +17,12 @@ const loginRateLimit = (0, rate_limit_middleware_1.createRateLimit)({
 });
 const passwordResetRateLimit = (0, rate_limit_middleware_1.createRateLimit)({
     windowMs: 15 * 60 * 1000,
-    maxRequests: 5,
+    maxRequests: 25,
     message: "Too many password reset attempts. Please try again later.",
 });
 const verificationRateLimit = (0, rate_limit_middleware_1.createRateLimit)({
     windowMs: 15 * 60 * 1000,
-    maxRequests: 6,
+    maxRequests: 20,
     message: "Too many verification attempts. Please try again later.",
 });
 router.post("/register", registerRateLimit, auth_controller_1.register);

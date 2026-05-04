@@ -7,6 +7,7 @@ exports.uploadPhotoController = exports.changePasswordController = exports.updat
 const prisma_1 = __importDefault(require("../../config/prisma"));
 const users_service_1 = require("./users.service");
 const validation_1 = require("../../utils/validation");
+const cloudinary_1 = require("../../utils/cloudinary");
 /* ===================== SEARCH USERS ===================== */
 const searchUsersController = async (req, res) => {
     try {
@@ -121,7 +122,8 @@ const uploadPhotoController = async (req, res) => {
         if (!req.file) {
             return res.status(400).json({ message: "No file uploaded" });
         }
-        const imageUrl = `/uploads/${req.file.filename}`;
+        const uploadedImage = await (0, cloudinary_1.uploadImageBuffer)(req.file, "chat-app/avatars");
+        const imageUrl = uploadedImage.secure_url;
         const updatedUser = await prisma_1.default.user.update({
             where: { id: userId },
             data: {
