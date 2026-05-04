@@ -110,7 +110,7 @@ const getRoleLabel = (role?: "OWNER" | "ADMIN" | "MEMBER") => {
   }
 };
 
-const REACTION_OPTIONS = ["❤️", "🔥", "👍", "🎉"];
+const REACTION_OPTIONS = ["❤️", "🤯", "😍", "👍", "👎", "🔥", "🥰"];
 const EMOJI_PICKER_ITEMS = [
   "😀",
   "😄",
@@ -218,6 +218,7 @@ export default function ChatsPage() {
   const [showComposerTools, setShowComposerTools] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isInvitesExpanded, setIsInvitesExpanded] = useState(false);
+  const [selectedMessageIds, setSelectedMessageIds] = useState<string[]>([]);
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [isGroupSettingsOpen, setIsGroupSettingsOpen] = useState(false);
   const [groupMode, setGroupMode] = useState<"create" | "invite">("create");
@@ -382,8 +383,14 @@ export default function ChatsPage() {
         type="button"
         className="message-image-button"
         onClick={() => setImageViewerMessage(message)}
+        onContextMenu={(event) => handleOpenMessageContextMenu(event, message)}
       >
-        <img src={imageUrl} alt="Shared media" className="message-image" />
+        <img
+          src={imageUrl}
+          alt="Shared media"
+          className="message-image"
+          onContextMenu={(event) => handleOpenMessageContextMenu(event, message)}
+        />
       </button>
     );
   };
@@ -401,6 +408,62 @@ export default function ChatsPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const copyMessageText = async (message: Message) => {
+    const text = getDisplayContent(message).trim();
+
+    if (!text) {
+      showToast("Nothing to copy from this message", "error");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast("Message copied", "success");
+    } catch (error) {
+      console.error("Copy message failed:", error);
+      showToast("Failed to copy message", "error");
+    }
+  };
+
+  const copyMessageImage = async (message: Message) => {
+    const imageUrl = getAssetUrl(message.imageUrl);
+
+    if (!imageUrl) {
+      showToast("No image to copy", "error");
+      return;
+    }
+
+    if (
+      typeof navigator === "undefined" ||
+      !navigator.clipboard ||
+      typeof navigator.clipboard.write !== "function" ||
+      typeof ClipboardItem === "undefined"
+    ) {
+      showToast("Copy image is not supported in this browser", "error");
+      return;
+    }
+
+    try {
+      const response = await fetch(imageUrl);
+
+      if (!response.ok) {
+        throw new Error(`Image request failed with status ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const mimeType = blob.type || "image/png";
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          [mimeType]: blob,
+        }),
+      ]);
+      showToast("Image copied", "success");
+    } catch (error) {
+      console.error("Copy image failed:", error);
+      showToast("Failed to copy image", "error");
+    }
   };
 
   const getReactionSummary = (message: Message) => {
@@ -1611,6 +1674,213 @@ export default function ChatsPage() {
     });
   };
 
+  const handleReplyToMessage = (message: Message) => {
+    const label = message.sender.username || message.sender.firstName || "user";
+    const prefix = `@${label} `;
+
+    if (editingMessageId || reschedulingMessageId) {
+      setEditingContent((prev) => (prev.startsWith(prefix) ? prev : `${prefix}${prev}`));
+    } else {
+      setContent((prev) => (prev.startsWith(prefix) ? prev : `${prefix}${prev}`));
+    }
+
+    setContextMenu(null);
+    setShowComposerTools(true);
+    window.setTimeout(() => inputRef.current?.focus(), 0);
+  };
+
+  const handleForwardMessage = async (message: Message) => {
+    if (message.imageUrl) {
+      const imageUrl = getAssetUrl(message.imageUrl);
+
+      if (imageUrl) {
+        try {
+          const response = await fetch(imageUrl);
+
+          if (!response.ok) {
+            throw new Error(`Image request failed with status ${response.status}`);
+          }
+
+          const blob = await response.blob();
+          const fileName = imageUrl.split("/").pop() || "forwarded-image";
+          const file = new File([blob], fileName, {
+            type: blob.type || "image/png",
+          });
+          setSelectedImage(file);
+        } catch (error) {
+          console.error("Forward image failed:", error);
+          showToast("Failed to attach image for forwarding", "error");
+          return;
+        }
+      }
+    }
+
+    if (message.content?.trim()) {
+      setContent(message.content.trim());
+    }
+
+    setContextMenu(null);
+    setShowComposerTools(true);
+    window.setTimeout(() => inputRef.current?.focus(), 0);
+    showToast("Message loaded into composer", "success");
+  };
+
+  const handleToggleSelectedMessage = (messageId: string) => {
+    setSelectedMessageIds((prev) =>
+      prev.includes(messageId) ? prev.filter((id) => id !== messageId) : [...prev, messageId]
+    );
+    setContextMenu(null);
+  };
+
+  const handleReportMessage = async (message: Message) => {
+    const reportPayload = [
+      `Chat: ${selectedChat?.id || "unknown"}`,
+      `Message: ${message.id}`,
+      `Sender: ${message.sender.username || message.sender.firstName}`,
+      `Created: ${message.createdAt}`,
+      `Content: ${getDisplayContent(message)}`,
+    ].join("\n");
+
+    try {
+      await navigator.clipboard.writeText(reportPayload);
+      showToast("Report details copied", "success");
+    } catch (error) {
+      console.error("Copy report details failed:", error);
+      showToast("Failed to prepare report details", "error");
+    } finally {
+      setContextMenu(null);
+    }
+  };
+
+  const getContextMenuActions = (message: Message) => {
+    const isOwnMessage = message.sender.id === user?.id;
+    const isScheduledOwnMessage =
+      isOwnMessage && Boolean(message.scheduledFor && !message.sentAt);
+    const hasImage = Boolean(message.imageUrl);
+    const hasText = Boolean(message.content?.trim());
+    const isSelected = selectedMessageIds.includes(message.id);
+    const reactionSummary = getReactionSummary(message);
+
+    const actions: Array<{
+      key: string;
+      label: string;
+      icon: string;
+      danger?: boolean;
+      onClick: () => void;
+    }> = [
+      {
+        key: "reply",
+        label: "Reply",
+        icon: "↩",
+        onClick: () => handleReplyToMessage(message),
+      },
+    ];
+
+    if (hasImage) {
+      actions.push({
+        key: "copy-image",
+        label: "Copy image",
+        icon: "🖼",
+        onClick: () => {
+          void copyMessageImage(message);
+          setContextMenu(null);
+        },
+      });
+      actions.push({
+        key: "download",
+        label: "Download",
+        icon: "↓",
+        onClick: () => {
+          downloadMessageImage(message);
+          setContextMenu(null);
+        },
+      });
+    } else if (hasText) {
+      actions.push({
+        key: "copy-text",
+        label: "Copy text",
+        icon: "⧉",
+        onClick: () => {
+          void copyMessageText(message);
+          setContextMenu(null);
+        },
+      });
+    }
+
+    actions.push({
+      key: "forward",
+      label: "Forward",
+      icon: "➜",
+      onClick: () => {
+        void handleForwardMessage(message);
+      },
+    });
+    actions.push({
+      key: "select",
+      label: isSelected ? "Unselect" : "Select",
+      icon: "◉",
+      onClick: () => handleToggleSelectedMessage(message.id),
+    });
+
+    if (!isOwnMessage) {
+      actions.push({
+        key: "report",
+        label: "Report",
+        icon: "⚑",
+        onClick: () => {
+          void handleReportMessage(message);
+        },
+      });
+    }
+
+    if (isScheduledOwnMessage) {
+      actions.push({
+        key: "reschedule",
+        label: "Reschedule",
+        icon: "🕒",
+        onClick: () => {
+          handleStartReschedule(message);
+          setContextMenu(null);
+        },
+      });
+      actions.push({
+        key: "cancel-scheduled",
+        label: "Cancel scheduled",
+        icon: "✕",
+        danger: true,
+        onClick: () => {
+          void handleCancelScheduledMessage(message.id);
+          setContextMenu(null);
+        },
+      });
+    } else if (isOwnMessage) {
+      actions.push({
+        key: "edit",
+        label: "Edit",
+        icon: "✎",
+        onClick: () => {
+          handleStartEdit(message);
+          setContextMenu(null);
+        },
+      });
+      actions.push({
+        key: "delete",
+        label: "Delete",
+        icon: "🗑",
+        danger: true,
+        onClick: () => {
+          void handleDeleteMessage(message.id);
+          setContextMenu(null);
+        },
+      });
+    }
+
+    return {
+      actions,
+      reactionSummary,
+    };
+  };
+
   const handleReactToMessage = async (messageId: string, emoji: string) => {
     try {
       const data = await reactToMessageRequest(messageId, emoji);
@@ -2267,10 +2537,12 @@ export default function ChatsPage() {
                         className={`message-row ${isMe ? "me" : "them"}`}
                       >
                         <div
-                          className={`message-bubble ${isMe ? "me" : "them"} ${
-                            matchingMessageIds[activeSearchIndex] === message.id
-                              ? "search-active"
-                              : matchingMessageIds.includes(message.id)
+                            className={`message-bubble ${isMe ? "me" : "them"} ${
+                              selectedMessageIds.includes(message.id) ? "selected" : ""
+                            } ${
+                              matchingMessageIds[activeSearchIndex] === message.id
+                                ? "search-active"
+                                : matchingMessageIds.includes(message.id)
                                 ? "search-match"
                                 : ""
                           }`}
@@ -2659,98 +2931,69 @@ export default function ChatsPage() {
           ) : (
             <>
               {(() => {
-                const isOwnMessage = contextMenu.message.sender.id === user?.id;
-                const isScheduledOwnMessage =
-                  isOwnMessage &&
-                  Boolean(contextMenu.message.scheduledFor && !contextMenu.message.sentAt);
+                const { actions, reactionSummary } = getContextMenuActions(contextMenu.message);
 
                 return (
                   <>
-              <div className="context-menu-reactions">
-                {REACTION_OPTIONS.map((emoji) => (
-                  <button
-                    key={emoji}
-                    type="button"
-                    className="reaction-chip"
-                    onClick={() => {
-                      void handleReactToMessage(contextMenu.message.id, emoji);
-                      setContextMenu(null);
-                    }}
-                  >
-                    {emoji}
-                  </button>
-                ))}
-              </div>
-              {isScheduledOwnMessage ? (
-                <>
-                  <button
-                    type="button"
-                    className="context-menu-item"
-                    onClick={() => {
-                      handleStartReschedule(contextMenu.message);
-                      setContextMenu(null);
-                    }}
-                  >
-                    Reschedule
-                  </button>
-                  <button
-                    type="button"
-                    className="context-menu-item danger"
-                    onClick={() => {
-                      void handleCancelScheduledMessage(contextMenu.message.id);
-                      setContextMenu(null);
-                    }}
-                  >
-                    Cancel scheduled
-                  </button>
-                </>
-              ) : isOwnMessage ? (
-                <>
-                  <button
-                    type="button"
-                    className="context-menu-item"
-                    onClick={() => {
-                      handleStartEdit(contextMenu.message);
-                      setContextMenu(null);
-                    }}
-                  >
-                    Edit
-                  </button>
-                  {contextMenu.message.imageUrl && (
-                    <button
-                      type="button"
-                      className="context-menu-item"
-                      onClick={() => {
-                        downloadMessageImage(contextMenu.message);
-                        setContextMenu(null);
-                      }}
-                    >
-                      Download image
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    className="context-menu-item danger"
-                    onClick={() => {
-                      void handleDeleteMessage(contextMenu.message.id);
-                      setContextMenu(null);
-                    }}
-                  >
-                    Delete
-                  </button>
-                </>
-              ) : contextMenu.message.imageUrl ? (
-                <button
-                  type="button"
-                  className="context-menu-item"
-                  onClick={() => {
-                    downloadMessageImage(contextMenu.message);
-                    setContextMenu(null);
-                  }}
-                >
-                  Download image
-                </button>
-              ) : null}
+                    <div className="context-menu-reactions">
+                      {REACTION_OPTIONS.map((emoji) => (
+                        <button
+                          key={emoji}
+                          type="button"
+                          className="reaction-chip"
+                          onClick={() => {
+                            void handleReactToMessage(contextMenu.message.id, emoji);
+                            setContextMenu(null);
+                          }}
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        className="reaction-chip reaction-chip-more"
+                        aria-label="More reactions"
+                      >
+                        ˅
+                      </button>
+                    </div>
+
+                    <div className="context-menu-actions">
+                      {actions.map((action) => (
+                        <button
+                          key={action.key}
+                          type="button"
+                          className={`context-menu-item${action.danger ? " danger" : ""}`}
+                          onClick={action.onClick}
+                        >
+                          <span className="context-menu-item-icon" aria-hidden="true">
+                            {action.icon}
+                          </span>
+                          <span className="context-menu-item-label">{action.label}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    {reactionSummary.length > 0 && (
+                      <div className="context-menu-footer">
+                        <span className="context-menu-footer-icon" aria-hidden="true">
+                          ♡
+                        </span>
+                        <span className="context-menu-footer-label">
+                          {reactionSummary.reduce((total, reaction) => total + reaction.count, 0)} reaction
+                          {reactionSummary.reduce((total, reaction) => total + reaction.count, 0) === 1
+                            ? ""
+                            : "s"}
+                        </span>
+                        <div className="context-menu-footer-reactions">
+                          {reactionSummary.map((reaction) => (
+                            <span key={reaction.emoji} className="context-menu-footer-reaction">
+                              {reaction.emoji} {reaction.count}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </>
                 );
               })()}

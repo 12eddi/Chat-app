@@ -1493,16 +1493,17 @@ body,
 .context-menu-popover {
   position: fixed;
   z-index: 80;
-  min-width: 220px;
-  max-width: 260px;
-  padding: 10px;
-  border-radius: 22px;
-  background: rgba(15, 23, 42, 0.96);
+  min-width: 280px;
+  max-width: 320px;
+  padding: 10px 10px 8px;
+  border-radius: 24px;
+  background: rgba(24, 24, 27, 0.98);
   color: #f8fafc;
-  box-shadow: 0 22px 40px rgba(15, 23, 42, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 24px 56px rgba(2, 6, 23, 0.42);
   backdrop-filter: blur(18px);
   display: grid;
-  gap: 6px;
+  gap: 8px;
   animation: fade-slide-in 0.16s ease;
 }
 
@@ -1519,26 +1520,41 @@ body,
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 2px 2px 10px;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
-  margin-bottom: 4px;
+  padding: 0 0 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .reaction-chip {
-  width: 38px;
+  width: 34px;
   height: 34px;
   border: none;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.07);
+  background: transparent;
   color: #ffffff;
   cursor: pointer;
-  font-size: 18px;
-  transition: transform 0.18s ease, background 0.18s ease;
+  font-size: 24px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.18s ease, background 0.18s ease, opacity 0.18s ease;
 }
 
 .reaction-chip:hover {
   transform: translateY(-1px);
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.reaction-chip-more {
+  margin-left: auto;
+  width: 28px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 18px;
+}
+
+.context-menu-actions {
+  display: grid;
+  gap: 2px;
 }
 
 .context-menu-item {
@@ -1548,10 +1564,13 @@ body,
   color: #f8fafc;
   text-align: left;
   padding: 11px 12px;
-  border-radius: 14px;
+  border-radius: 16px;
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   transition: background 0.18s ease, color 0.18s ease;
 }
 
@@ -1561,6 +1580,61 @@ body,
 
 .context-menu-item.danger {
   color: #f87171;
+}
+
+.context-menu-item-icon {
+  width: 22px;
+  flex: 0 0 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  opacity: 0.92;
+}
+
+.context-menu-item-label {
+  flex: 1;
+}
+
+.context-menu-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.context-menu-footer-icon {
+  font-size: 18px;
+  opacity: 0.8;
+}
+
+.context-menu-footer-label {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.context-menu-footer-reactions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.context-menu-footer-reaction {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 24px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .schedule-modal-overlay {
