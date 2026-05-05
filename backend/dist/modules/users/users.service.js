@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.changePassword = exports.updateProfile = exports.getUserDetails = exports.searchUsers = void 0;
+exports.upsertUserDeviceToken = exports.changePassword = exports.updateProfile = exports.getUserDetails = exports.searchUsers = void 0;
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const prisma_1 = __importDefault(require("../../config/prisma"));
 const searchUsers = async (query, currentUserId) => {
@@ -127,4 +127,29 @@ const changePassword = async ({ userId, currentPassword, newPassword, }) => {
     return { message: "Password changed successfully" };
 };
 exports.changePassword = changePassword;
+const upsertUserDeviceToken = async ({ userId, token, platform, }) => {
+    const normalizedToken = token.trim();
+    const normalizedPlatform = platform.trim().toLowerCase();
+    if (!normalizedToken) {
+        throw new Error("Device token is required");
+    }
+    if (!normalizedPlatform) {
+        throw new Error("Platform is required");
+    }
+    return prisma_1.default.userDeviceToken.upsert({
+        where: {
+            token: normalizedToken,
+        },
+        update: {
+            userId,
+            platform: normalizedPlatform,
+        },
+        create: {
+            userId,
+            token: normalizedToken,
+            platform: normalizedPlatform,
+        },
+    });
+};
+exports.upsertUserDeviceToken = upsertUserDeviceToken;
 //# sourceMappingURL=users.service.js.map

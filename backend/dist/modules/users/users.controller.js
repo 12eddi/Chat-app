@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.uploadPhotoController = exports.changePasswordController = exports.updateProfileController = exports.getUserDetailsController = exports.searchUsersController = void 0;
+exports.upsertDeviceTokenController = exports.uploadPhotoController = exports.changePasswordController = exports.updateProfileController = exports.getUserDetailsController = exports.searchUsersController = void 0;
 const prisma_1 = __importDefault(require("../../config/prisma"));
 const users_service_1 = require("./users.service");
 const validation_1 = require("../../utils/validation");
@@ -142,4 +142,34 @@ const uploadPhotoController = async (req, res) => {
     }
 };
 exports.uploadPhotoController = uploadPhotoController;
+const upsertDeviceTokenController = async (req, res) => {
+    try {
+        const userId = req.user?.id;
+        if (!userId) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+        const { token, platform } = req.body || {};
+        if (!token || typeof token !== "string") {
+            return res.status(400).json({ message: "Device token is required" });
+        }
+        if (!platform || typeof platform !== "string") {
+            return res.status(400).json({ message: "Platform is required" });
+        }
+        const deviceToken = await (0, users_service_1.upsertUserDeviceToken)({
+            userId,
+            token,
+            platform,
+        });
+        return res.status(200).json({
+            message: "Device token stored successfully",
+            deviceToken,
+        });
+    }
+    catch (error) {
+        return res.status(400).json({
+            message: error?.message || "Failed to store device token",
+        });
+    }
+};
+exports.upsertDeviceTokenController = upsertDeviceTokenController;
 //# sourceMappingURL=users.controller.js.map

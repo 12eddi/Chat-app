@@ -15,6 +15,12 @@ type ChangePasswordInput = {
   newPassword: string;
 };
 
+type UpsertUserDeviceTokenInput = {
+  userId: string;
+  token: string;
+  platform: string;
+};
+
 export const searchUsers = async (query: string, currentUserId: string) => {
   return prisma.user.findMany({
     where: {
@@ -157,4 +163,36 @@ export const changePassword = async ({
   });
 
   return { message: "Password changed successfully" };
+};
+
+export const upsertUserDeviceToken = async ({
+  userId,
+  token,
+  platform,
+}: UpsertUserDeviceTokenInput) => {
+  const normalizedToken = token.trim();
+  const normalizedPlatform = platform.trim().toLowerCase();
+
+  if (!normalizedToken) {
+    throw new Error("Device token is required");
+  }
+
+  if (!normalizedPlatform) {
+    throw new Error("Platform is required");
+  }
+
+  return prisma.userDeviceToken.upsert({
+    where: {
+      token: normalizedToken,
+    },
+    update: {
+      userId,
+      platform: normalizedPlatform,
+    },
+    create: {
+      userId,
+      token: normalizedToken,
+      platform: normalizedPlatform,
+    },
+  });
 };

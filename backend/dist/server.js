@@ -60,7 +60,17 @@ io.on("connection", (socket) => {
     });
     socket.on("join_chat", (chatId) => {
         socket.join(chatId);
+        const userId = socket.data.userId;
+        if (userId && chatId) {
+            (0, socket_1.trackSocketActiveChat)(socket.id, userId, chatId);
+        }
         console.log(`User joined chat: ${chatId}`);
+    });
+    socket.on("leave_chat", (chatId) => {
+        if (chatId) {
+            socket.leave(chatId);
+        }
+        (0, socket_1.clearSocketActiveChat)(socket.id);
     });
     socket.on("presence:update", ({ userId, status }) => {
         if (!userId || !onlineUsers.has(userId)) {
@@ -100,6 +110,7 @@ io.on("connection", (socket) => {
     });
     socket.on("disconnect", () => {
         console.log("User disconnected:", socket.id);
+        (0, socket_1.clearSocketActiveChat)(socket.id);
         const userId = socket.data.userId;
         if (userId) {
             const userSockets = onlineUsers.get(userId);

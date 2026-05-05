@@ -133,6 +133,10 @@ const smtpPort = hasAllMailSettings
   : null;
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID?.trim() || null;
+const firebaseProjectId = process.env.FIREBASE_PROJECT_ID?.trim();
+const firebaseClientEmail = process.env.FIREBASE_CLIENT_EMAIL?.trim();
+const firebasePrivateKeyRaw = process.env.FIREBASE_PRIVATE_KEY;
+const firebaseServiceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON?.trim();
 const cloudinaryCloudName = process.env.CLOUDINARY_CLOUD_NAME?.trim();
 const cloudinaryApiKey = process.env.CLOUDINARY_API_KEY?.trim();
 const cloudinaryApiSecret = process.env.CLOUDINARY_API_SECRET?.trim();
@@ -151,6 +155,28 @@ if (hasAnyCloudinarySetting && !hasAllCloudinarySettings) {
   );
 }
 
+const hasAnyFirebaseTriplet = Boolean(
+  firebaseProjectId || firebaseClientEmail || firebasePrivateKeyRaw
+);
+
+const hasAllFirebaseTriplet = Boolean(
+  firebaseProjectId && firebaseClientEmail && firebasePrivateKeyRaw
+);
+
+if (hasAnyFirebaseTriplet && !hasAllFirebaseTriplet) {
+  throw new Error(
+    "Firebase Admin configuration is incomplete. Set FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY together."
+  );
+}
+
+if (firebaseServiceAccountJson && hasAnyFirebaseTriplet) {
+  throw new Error(
+    "Use either FIREBASE_SERVICE_ACCOUNT_JSON or the FIREBASE_PROJECT_ID/FIREBASE_CLIENT_EMAIL/FIREBASE_PRIVATE_KEY triplet, not both."
+  );
+}
+
+const firebasePrivateKey = firebasePrivateKeyRaw?.replace(/\\n/g, "\n");
+
 export const env = {
   nodeEnv: process.env.NODE_ENV || "development",
   host,
@@ -167,6 +193,17 @@ export const env = {
   scheduledMessageErrorBackoffMs,
   runScheduledMessageProcessor,
   googleClientId,
+  firebase: firebaseServiceAccountJson
+    ? {
+        serviceAccountJson: firebaseServiceAccountJson,
+      }
+    : hasAllFirebaseTriplet
+      ? {
+          projectId: firebaseProjectId!,
+          clientEmail: firebaseClientEmail!,
+          privateKey: firebasePrivateKey!,
+        }
+      : null,
   cloudinary:
     hasAllCloudinarySettings
       ? {

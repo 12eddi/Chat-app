@@ -18,6 +18,8 @@ import {
 } from "../../utils/validation";
 import { createNotification } from "../notifications/notifications.service";
 import { uploadImageBuffer } from "../../utils/cloudinary";
+import { isUserActiveInChat } from "../../socket";
+import { sendPushToUserDevices } from "../../utils/push";
 
 type UploadedMessageImage = {
   buffer: Buffer;
@@ -65,6 +67,24 @@ const emitImmediateMessageDelivery = async (
       });
 
       io.to(`user:${recipientId}`).emit("notification:new", notification);
+
+      if (!isUserActiveInChat(recipientId, message.chatId)) {
+        const pushBody =
+          previewBody.length > 120
+            ? `${previewBody.slice(0, 117)}...`
+            : previewBody;
+
+        await sendPushToUserDevices({
+          userId: recipientId,
+          title: message.sender.firstName,
+          body: pushBody,
+          data: {
+            chatId: message.chatId,
+            messageId: message.id,
+            type: "new_message",
+          },
+        });
+      }
     })
   );
 };

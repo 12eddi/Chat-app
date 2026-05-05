@@ -4,6 +4,7 @@ import {
   getUserDetailsController,
   updateProfileController,
   changePasswordController,
+  upsertDeviceTokenController,
 } from "./users.controller";
 import { authenticate } from "../../middleware/auth.middleware";
 import { requireVerifiedEmail } from "../../middleware/verified.middleware";
@@ -16,6 +17,7 @@ router.get("/", authenticate, requireVerifiedEmail, searchUsersController);
 router.get("/:userId", authenticate, requireVerifiedEmail, getUserDetailsController);
 router.put("/profile", authenticate, requireVerifiedEmail, updateProfileController);
 router.put("/change-password", authenticate, requireVerifiedEmail, changePasswordController);
+router.post("/device-token", authenticate, requireVerifiedEmail, upsertDeviceTokenController);
 
 router.post(
   "/upload-photo",

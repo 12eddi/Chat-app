@@ -15,6 +15,17 @@ export declare const env: {
     scheduledMessageErrorBackoffMs: number;
     runScheduledMessageProcessor: boolean;
     googleClientId: string | null;
+    firebase: {
+        serviceAccountJson: string;
+        projectId?: never;
+        clientEmail?: never;
+        privateKey?: never;
+    } | {
+        projectId: string;
+        clientEmail: string;
+        privateKey: string;
+        serviceAccountJson?: never;
+    } | null;
     cloudinary: {
         cloudName: string;
         apiKey: string;

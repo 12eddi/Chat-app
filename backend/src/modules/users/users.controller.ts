@@ -5,6 +5,7 @@ import {
   getUserDetails,
   updateProfile,
   changePassword,
+  upsertUserDeviceToken,
 } from "./users.service";
 import { isValidUuid, validateSearchQuery } from "../../utils/validation";
 import { uploadImageBuffer, type UploadedImageFile } from "../../utils/cloudinary";
@@ -161,6 +162,41 @@ export const uploadPhotoController = async (req: Request, res: Response) => {
   } catch (error) {
     return res.status(500).json({
       message: "Upload failed",
+    });
+  }
+};
+
+export const upsertDeviceTokenController = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const { token, platform } = req.body || {};
+
+    if (!token || typeof token !== "string") {
+      return res.status(400).json({ message: "Device token is required" });
+    }
+
+    if (!platform || typeof platform !== "string") {
+      return res.status(400).json({ message: "Platform is required" });
+    }
+
+    const deviceToken = await upsertUserDeviceToken({
+      userId,
+      token,
+      platform,
+    });
+
+    return res.status(200).json({
+      message: "Device token stored successfully",
+      deviceToken,
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      message: error?.message || "Failed to store device token",
     });
   }
 };

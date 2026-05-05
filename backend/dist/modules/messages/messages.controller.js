@@ -6,6 +6,8 @@ const socket_1 = require("../../socket");
 const validation_1 = require("../../utils/validation");
 const notifications_service_1 = require("../notifications/notifications.service");
 const cloudinary_1 = require("../../utils/cloudinary");
+const socket_2 = require("../../socket");
+const push_1 = require("../../utils/push");
 const buildImageUrl = async (file) => {
     if (!file) {
         return null;
@@ -31,6 +33,21 @@ const emitImmediateMessageDelivery = async (message, recipientIds) => {
             messageId: message.id,
         });
         io.to(`user:${recipientId}`).emit("notification:new", notification);
+        if (!(0, socket_2.isUserActiveInChat)(recipientId, message.chatId)) {
+            const pushBody = previewBody.length > 120
+                ? `${previewBody.slice(0, 117)}...`
+                : previewBody;
+            await (0, push_1.sendPushToUserDevices)({
+                userId: recipientId,
+                title: message.sender.firstName,
+                body: pushBody,
+                data: {
+                    chatId: message.chatId,
+                    messageId: message.id,
+                    type: "new_message",
+                },
+            });
+        }
     }));
 };
 const createMessage = async (req, res) => {

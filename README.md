@@ -305,3 +305,14 @@ This project now covers:
 - architecture documentation
 - API reference
 - Dockerized local deployment
+
+## Mobile Client
+
+The repository now also includes a separate React Native mobile client in [mobile/README.md](./mobile/README.md).
+
+It reuses:
+- the existing Express API
+- the existing Socket.IO server
+- the existing PostgreSQL/Prisma database
+
+Firebase is used only for push notifications through FCM.

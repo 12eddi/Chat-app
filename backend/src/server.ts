@@ -13,7 +13,7 @@ import {
   registerScheduledMessageProcessorShutdown,
   startScheduledMessageProcessor,
 } from "./modules/messages/message-scheduler";
-import { setSocketServer } from "./socket";
+import { clearSocketActiveChat, setSocketServer, trackSocketActiveChat } from "./socket";
 
 const server = http.createServer(app);
 
@@ -78,7 +78,21 @@ io.on("connection", (socket) => {
 
   socket.on("join_chat", (chatId: string) => {
     socket.join(chatId);
+    const userId = socket.data.userId as string | undefined;
+
+    if (userId && chatId) {
+      trackSocketActiveChat(socket.id, userId, chatId);
+    }
+
     console.log(`User joined chat: ${chatId}`);
+  });
+
+  socket.on("leave_chat", (chatId: string) => {
+    if (chatId) {
+      socket.leave(chatId);
+    }
+
+    clearSocketActiveChat(socket.id);
   });
 
   socket.on("presence:update", ({ userId, status }: { userId: string; status: "online" | "away" }) => {
@@ -146,6 +160,7 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     console.log("User disconnected:", socket.id);
+    clearSocketActiveChat(socket.id);
 
     const userId = socket.data.userId as string | undefined;
 

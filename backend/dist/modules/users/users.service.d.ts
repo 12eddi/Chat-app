@@ -10,6 +10,11 @@ type ChangePasswordInput = {
     currentPassword: string;
     newPassword: string;
 };
+type UpsertUserDeviceTokenInput = {
+    userId: string;
+    token: string;
+    platform: string;
+};
 export declare const searchUsers: (query: string, currentUserId: string) => Promise<{
     email: string;
     id: string;
@@ -43,6 +48,14 @@ export declare const updateProfile: ({ userId, firstName, lastName, username, em
 }>;
 export declare const changePassword: ({ userId, currentPassword, newPassword, }: ChangePasswordInput) => Promise<{
     message: string;
+}>;
+export declare const upsertUserDeviceToken: ({ userId, token, platform, }: UpsertUserDeviceTokenInput) => Promise<{
+    userId: string;
+    id: string;
+    createdAt: Date;
+    updatedAt: Date;
+    token: string;
+    platform: string;
 }>;
 export {};
 //# sourceMappingURL=users.service.d.ts.map
